@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { CircularProgress, Button, Box, Typography } from '@mui/joy';
-import { DeleteForever, Person, Email, Business, Badge } from '@mui/icons-material'; // 1. Import new icons
+import { DeleteForever, Person, Email, Business, Badge } from '@mui/icons-material';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import BrandSidebar from '../../components/appComponents/BrandSidebar';
@@ -9,41 +9,36 @@ import BrandModal from './BrandModal';
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import { useAdminLayout } from './AdminLayout';
 
-// --- TYPE DEFINITIONS ---
+// --- (All type definitions are the same) ---
 type Dashboard = {
   dashboard_id: string;
   dashboard_type: string;
   color?: string;
   status: string;
 };
-
 type Platform = {
   platform_id: string;
   platform_name: string;
   platform_logo_url?: string;
 };
-
 type Brand = {
   brand_id: string;
   brand_name: string;
   company_name?: string;
   platforms: Platform[];
 };
-
 type AvailableBrand = {
   brand_id: string;
   brand_name: string;
 };
-
-// 2. UPDATED USER TYPE
 type User = {
   user_id: string;
   first_name: string;
   last_name: string;
   email: string;
   status: string;
-  user_type: string;     // Added
-  organisation: string;  // Added
+  user_type: string;
+  organisation: string;
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
@@ -54,7 +49,7 @@ const UserPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { setTabInfo } = useAdminLayout();
 
-  // --- STATES ---
+  // --- (All states are the same) ---
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [activeDashboard, setActiveDashboard] = useState<string>('');
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -74,7 +69,7 @@ const UserPage: React.FC = () => {
 
   const getToken = () => localStorage.getItem('token');
 
-  // --- API FUNCTIONS (MEMOIZED) ---
+  // --- (All functions up to handleDeleteMultipleBrands are the same) ---
   const fetchUserInfo = useCallback(async () => {
     if (!userId) return;
     try {
@@ -245,26 +240,13 @@ const UserPage: React.FC = () => {
     setIsModalOpen(true);
   }, [brands, fetchBrandPlatforms]);
 
-  const handleDeleteBrand = useCallback(async (brandId: string) => {
-    if (!window.confirm('Are you sure you want to remove this brand?')) return;
-    try {
-      const token = getToken();
-      const response = await axios.delete(
-        `${API_BASE_URL}/api/admin/users/${userId}/dashboards/${activeDashboard}/brands/${brandId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (response.data.success) {
-        toast.success('Brand removed successfully');
-        fetchUserBrands();
-      }
-    } catch (error) { toast.error('Failed to remove brand'); }
-  }, [userId, activeDashboard, fetchUserBrands]);
-
-  const handleDeleteDashboardAccess = useCallback(async () => {
+  const handleDeleteDashboardAccess = useCallback(async (skipConfirmation = false) => {
     const dashboardName = dashboards.find(d => d.dashboard_id === activeDashboard)?.dashboard_type;
-    if (!window.confirm(`Are you sure you want to revoke access to ${dashboardName} dashboard? This will remove all brands and platforms.`)) {
+    
+    if (!skipConfirmation && !window.confirm(`Are you sure you want to revoke access to ${dashboardName} dashboard? This will remove all brands and platforms.`)) {
       return;
     }
+
     setIsDeletingDashboard(true);
     try {
       const token = getToken();
@@ -272,15 +254,72 @@ const UserPage: React.FC = () => {
         `${API_BASE_URL}/api/admin/users/${userId}/dashboards/${activeDashboard}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       if (response.data.success) {
-        toast.success('Dashboard access revoked successfully');
-        fetchUserBrands();
+        if (!skipConfirmation) { // Only show this if NOT called from the bulk delete
+          toast.success('Dashboard access revoked successfully');
+        }
+        fetchUserBrands(); // This will refresh UI and show "No Access"
       }
-    } catch (error: any) { toast.error('Failed to revoke access');
-    } finally { setIsDeletingDashboard(false); }
+    } catch (error: any) { 
+      toast.error('Failed to revoke access');
+    } finally { 
+      setIsDeletingDashboard(false); 
+    }
   }, [userId, activeDashboard, dashboards, fetchUserBrands]);
 
-  // --- EFFECTS ---
+  // --- UPDATED: handleDeleteMultipleBrands ---
+  const handleDeleteMultipleBrands = useCallback(async (brandIds: string[]) => {
+    
+    const totalBrandsBeforeDelete = brands.length;
+    const brandsToDeleteCount = brandIds.length;
+
+    // --- 1. NEW LOGIC: Check if deleting all brands ---
+    if (brandsToDeleteCount === totalBrandsBeforeDelete && brandsToDeleteCount > 0) {
+      // We are deleting all brands. Call the master delete function instead.
+      const dashboardName = dashboards.find(d => d.dashboard_id === activeDashboard)?.dashboard_type;
+      if (window.confirm(`This will remove all ${brandsToDeleteCount} brands and revoke access to the ${dashboardName} dashboard. Are you sure?`)) {
+        toast.success('All brands removed. Revoking dashboard access...');
+        handleDeleteDashboardAccess(true); // Call with skipConfirmation=true
+      }
+      return; // Stop here. Do not run the loop.
+    }
+
+    // --- 2. EXISTING LOGIC: Only run if we are NOT deleting all brands ---
+    if (!window.confirm(`Are you sure you want to remove ${brandIds.length} brand(s)?`)) return;
+
+    const token = getToken();
+    const deletePromises = brandIds.map(brandId => {
+      return axios.delete(
+        `${API_BASE_URL}/api/admin/users/${userId}/dashboards/${activeDashboard}/brands/${brandId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    });
+
+    try {
+      const results = await Promise.allSettled(deletePromises);
+      
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+
+      if (successful > 0) {
+        toast.success(`${successful} brand(s) removed successfully`);
+      }
+      if (failed > 0) {
+        toast.error(`${failed} brand(s) could not be removed`);
+      }
+      
+      // We still have brands left, just refresh the list.
+      fetchUserBrands();
+
+    } catch (error) {
+      console.error('Error during bulk delete:', error);
+      toast.error('An error occurred while removing brands');
+    }
+  }, [userId, activeDashboard, fetchUserBrands, brands.length, handleDeleteDashboardAccess, dashboards]); // Added dependencies
+
+
+  // --- (All other Effects, Memos, and Render functions are the same) ---
   useEffect(() => {
     if (dashboards.length > 0) {
       setTabInfo({
@@ -315,25 +354,22 @@ const UserPage: React.FC = () => {
     return selectedBrandForEdit?.platforms.map(p => p.platform_id);
   }, [selectedBrandForEdit]);
 
-  // 3. --- REDESIGNED USER INFO BAR ---
-  // This component will be rendered *inside* the pageContent function
   const UserInfoBar = () => (
     <Box
       sx={{
         display: 'flex',
-        flexWrap: 'wrap', // Allow wrapping on small screens
+        flexWrap: 'wrap',
         gap: 3,
         p: 2,
         backgroundColor: '#FFFFFF',
         border: '1px solid #ECF0FF',
         borderRadius: '8px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-        mb: 2, // Margin bottom to separate from content
+        mb: 2,
       }}
     >
       {userInfo ? (
         <>
-          {/* User Name */}
           <Box sx={{ flex: '1 1 200px', minWidth: '200px' }}>
             <Typography level="body-xs" sx={{ color: TEXT_PRIMARY.GREY }}>User Name</Typography>
             <Typography level="title-sm" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -341,8 +377,6 @@ const UserPage: React.FC = () => {
               {userInfo.first_name} {userInfo.last_name}
             </Typography>
           </Box>
-          
-          {/* Email */}
           <Box sx={{ flex: '1 1 200px', minWidth: '200px' }}>
             <Typography level="body-xs" sx={{ color: TEXT_PRIMARY.GREY }}>Email</Typography>
             <Typography level="title-sm" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, wordBreak: 'break-all' }}>
@@ -350,8 +384,6 @@ const UserPage: React.FC = () => {
               {userInfo.email}
             </Typography>
           </Box>
-
-          {/* User Type */}
           <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
             <Typography level="body-xs" sx={{ color: TEXT_PRIMARY.GREY }}>User Type</Typography>
             <Typography level="title-sm" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 600 }}>
@@ -359,8 +391,6 @@ const UserPage: React.FC = () => {
               {userInfo.user_type}
             </Typography>
           </Box>
-
-          {/* Organisation */}
           <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
             <Typography level="body-xs" sx={{ color: TEXT_PRIMARY.GREY }}>Organisation</Typography>
             <Typography level="title-sm" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -368,8 +398,6 @@ const UserPage: React.FC = () => {
               {userInfo.organisation}
             </Typography>
           </Box>
-
-          {/* Status */}
           <Box sx={{ flex: '0 1 auto', ml: 'auto', alignSelf: 'center' }}>
             <Typography
               sx={{
@@ -393,7 +421,6 @@ const UserPage: React.FC = () => {
     </Box>
   );
 
-  // --- RENDER ---
   const pageContent = () => {
     if (isLoadingDashboards) {
       return (
@@ -403,10 +430,8 @@ const UserPage: React.FC = () => {
       );
     }
     
-    // "No Access" view
     if (!hasAccess && !isLoadingBrands) {
       return (
-        // 4. MOVED UserInfoBar here
         <Box sx={{ p: 2, backgroundColor: '#F9FAFB' }}>
           <UserInfoBar />
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '24px', padding: '24px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #ECF0FF' }}>
@@ -427,7 +452,6 @@ const UserPage: React.FC = () => {
       );
     }
 
-    // "Has Access" view (or is loading brands)
     if (hasAccess || isLoadingBrands) {
       return (
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', height: '100%' }}>
@@ -436,22 +460,19 @@ const UserPage: React.FC = () => {
             isLoading={isLoadingBrands}
             onAddBrand={handleAddBrand}
             onEditBrand={handleEditBrand}
-            onDeleteBrand={handleDeleteBrand}
+            onDeleteMultipleBrands={handleDeleteMultipleBrands}
             dashboardName={activeDashboardData?.dashboard_type || ''}
           />
-          {/* 5. MOVED UserInfoBar here */}
           <div style={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
             backgroundColor: '#FAFAFB',
             position: 'relative',
-            overflow: 'auto', // Add scroll to this panel
-            padding: '16px' // Add padding
+            overflow: 'auto',
+            padding: '16px'
           }}>
-            
             <UserInfoBar />
-
             <div style={{
               flex: 1,
               display: 'flex',
@@ -461,7 +482,7 @@ const UserPage: React.FC = () => {
               backgroundColor: '#FFFFFF',
               borderRadius: '8px',
               border: '1px solid #ECF0FF',
-              minHeight: '300px' // Give it some min height
+              minHeight: '300px'
             }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
@@ -469,18 +490,17 @@ const UserPage: React.FC = () => {
                 <p>This area will display dashboard-specific content</p>
               </div>
             </div>
-
             <div style={{
-              position: 'sticky', // Stick to the bottom of this scrolling panel
+              position: 'sticky',
               bottom: '16px',
-              marginTop: '16px', // Add space above
+              marginTop: '16px',
               alignSelf: 'flex-end'
             }}>
               <Button
                 variant="solid"
                 color="danger"
                 startDecorator={<DeleteForever />}
-                onClick={handleDeleteDashboardAccess}
+                onClick={() => handleDeleteDashboardAccess(false)} // Call with false
                 loading={isDeletingDashboard}
                 disabled={isDeletingDashboard}
                 sx={{ backgroundColor: '#D32F2F', ':hover': { backgroundColor: '#B71C1C' }}}
@@ -493,7 +513,6 @@ const UserPage: React.FC = () => {
       );
     }
 
-    // Fallback loading
     return (
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
         <CircularProgress sx={{ color: TEXT_PRIMARY.PURPLE }} />
@@ -504,9 +523,6 @@ const UserPage: React.FC = () => {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       
-      {/* 6. REMOVED the UserInfoBar from here */}
-
-      {/* The main content now fills the space, and UserInfoBar is *inside* it */}
       <Box sx={{ flex: 1, overflow: 'auto', backgroundColor: '#F9FAFB' }}>
         {pageContent()}
       </Box>
