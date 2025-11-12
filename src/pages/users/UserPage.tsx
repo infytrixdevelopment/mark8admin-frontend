@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'; // 1. Add useMemo
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { CircularProgress, Button } from '@mui/joy';
-import { DeleteForever } from '@mui/icons-material';
+import { CircularProgress, Button, Box, Typography } from '@mui/joy';
+import { DeleteForever, Person, Email, Business, Badge } from '@mui/icons-material'; // 1. Import new icons
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import BrandSidebar from '../../components/appComponents/BrandSidebar';
@@ -35,6 +35,17 @@ type AvailableBrand = {
   brand_name: string;
 };
 
+// 2. UPDATED USER TYPE
+type User = {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  status: string;
+  user_type: string;     // Added
+  organisation: string;  // Added
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
 // --- COMPONENT ---
@@ -48,6 +59,8 @@ const UserPage: React.FC = () => {
   const [activeDashboard, setActiveDashboard] = useState<string>('');
   const [brands, setBrands] = useState<Brand[]>([]);
   const [hasAccess, setHasAccess] = useState<boolean>(false);
+  const [userInfo, setUserInfo] = useState<User | null>(null);
+  const [brandCounts, setBrandCounts] = useState<Record<string, number>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedBrandForEdit, setSelectedBrandForEdit] = useState<Brand | null>(null);
@@ -62,6 +75,22 @@ const UserPage: React.FC = () => {
   const getToken = () => localStorage.getItem('token');
 
   // --- API FUNCTIONS (MEMOIZED) ---
+  const fetchUserInfo = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const token = getToken();
+      const response = await axios.get(`${API_BASE_URL}/api/admin/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setUserInfo(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching user info:', error);
+      toast.error('Failed to load user information');
+    }
+  }, [userId]);
+
   const fetchDashboards = useCallback(async () => {
     setIsLoadingDashboards(true);
     try {
@@ -104,16 +133,20 @@ const UserPage: React.FC = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (brandsResponse.data.success) {
-          setBrands(brandsResponse.data.data.brands);
+          const fetchedBrands = brandsResponse.data.data.brands;
+          setBrands(fetchedBrands);
+          setBrandCounts(prev => ({ ...prev, [activeDashboard]: fetchedBrands.length }));
         }
       } else {
         setHasAccess(false);
         setBrands([]);
+        setBrandCounts(prev => ({ ...prev, [activeDashboard]: 0 }));
       }
     } catch (error: any) {
       if (error.response?.status === 404) {
         setHasAccess(false);
         setBrands([]);
+        setBrandCounts(prev => ({ ...prev, [activeDashboard]: 0 }));
       }
     } finally {
       setIsLoadingBrands(false);
@@ -165,7 +198,6 @@ const UserPage: React.FC = () => {
     }
   }, [hasAccess, modalMode, userId, activeDashboard, fetchUserBrands]);
 
-  // --- EVENT HANDLERS (MEMOIZED) ---
   const handleDashboardChange = useCallback((dashboardId: string) => {
     setActiveDashboard(dashboardId);
     setSearchParams({ dashboard: dashboardId }, { replace: true });
@@ -255,7 +287,7 @@ const UserPage: React.FC = () => {
         tabs: dashboards.map(d => ({
           id: d.dashboard_id,
           name: d.dashboard_type,
-          count: (d.dashboard_id === activeDashboard) ? brands.length : undefined
+          count: brandCounts[d.dashboard_id]
         })),
         activeTab: activeDashboard,
         onTabChange: handleDashboardChange,
@@ -264,11 +296,12 @@ const UserPage: React.FC = () => {
     return () => {
       setTabInfo(null);
     };
-  }, [setTabInfo, dashboards, activeDashboard, brands.length, handleDashboardChange]);
+  }, [setTabInfo, dashboards, activeDashboard, brandCounts, handleDashboardChange]);
   
   useEffect(() => {
     fetchDashboards();
-  }, [fetchDashboards]);
+    fetchUserInfo();
+  }, [fetchDashboards, fetchUserInfo]);
 
   useEffect(() => {
     if (activeDashboard) {
@@ -278,13 +311,87 @@ const UserPage: React.FC = () => {
 
   const activeDashboardData = dashboards.find(d => d.dashboard_id === activeDashboard);
 
-  // --- 2. THIS IS THE FIX ---
-  // We use useMemo to create a stable array. It will only update
-  // when selectedBrandForEdit (the object) changes.
   const memoizedAssignedPlatformIds = useMemo(() => {
-    // Return an array of platform IDs, or undefined if no brand is selected
     return selectedBrandForEdit?.platforms.map(p => p.platform_id);
-  }, [selectedBrandForEdit]); // Dependency is the brand object
+  }, [selectedBrandForEdit]);
+
+  // 3. --- REDESIGNED USER INFO BAR ---
+  // This component will be rendered *inside* the pageContent function
+  const UserInfoBar = () => (
+    <Box
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap', // Allow wrapping on small screens
+        gap: 3,
+        p: 2,
+        backgroundColor: '#FFFFFF',
+        border: '1px solid #ECF0FF',
+        borderRadius: '8px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        mb: 2, // Margin bottom to separate from content
+      }}
+    >
+      {userInfo ? (
+        <>
+          {/* User Name */}
+          <Box sx={{ flex: '1 1 200px', minWidth: '200px' }}>
+            <Typography level="body-xs" sx={{ color: TEXT_PRIMARY.GREY }}>User Name</Typography>
+            <Typography level="title-sm" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Person sx={{ fontSize: '18px', color: TEXT_PRIMARY.PURPLE }} />
+              {userInfo.first_name} {userInfo.last_name}
+            </Typography>
+          </Box>
+          
+          {/* Email */}
+          <Box sx={{ flex: '1 1 200px', minWidth: '200px' }}>
+            <Typography level="body-xs" sx={{ color: TEXT_PRIMARY.GREY }}>Email</Typography>
+            <Typography level="title-sm" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, wordBreak: 'break-all' }}>
+              <Email sx={{ fontSize: '18px', color: TEXT_PRIMARY.PURPLE }} />
+              {userInfo.email}
+            </Typography>
+          </Box>
+
+          {/* User Type */}
+          <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
+            <Typography level="body-xs" sx={{ color: TEXT_PRIMARY.GREY }}>User Type</Typography>
+            <Typography level="title-sm" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 600 }}>
+              <Badge sx={{ fontSize: '18px', color: TEXT_PRIMARY.PURPLE }} />
+              {userInfo.user_type}
+            </Typography>
+          </Box>
+
+          {/* Organisation */}
+          <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
+            <Typography level="body-xs" sx={{ color: TEXT_PRIMARY.GREY }}>Organisation</Typography>
+            <Typography level="title-sm" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Business sx={{ fontSize: '18px', color: TEXT_PRIMARY.PURPLE }} />
+              {userInfo.organisation}
+            </Typography>
+          </Box>
+
+          {/* Status */}
+          <Box sx={{ flex: '0 1 auto', ml: 'auto', alignSelf: 'center' }}>
+            <Typography
+              sx={{
+                padding: '4px 12px',
+                borderRadius: '16px',
+                fontWeight: 600,
+                fontSize: '12px',
+                color: userInfo.status === 'ACTIVE' ? '#1A8A5C' : '#D32F2F',
+                backgroundColor: userInfo.status === 'ACTIVE' ? '#E5F3ED' : '#FCE7E7',
+              }}
+            >
+              {userInfo.status}
+            </Typography>
+          </Box>
+        </>
+      ) : (
+        <Typography level="body-sm" sx={{ color: TEXT_PRIMARY.GREY }}>
+          Loading user info...
+        </Typography>
+      )}
+    </Box>
+  );
 
   // --- RENDER ---
   const pageContent = () => {
@@ -296,25 +403,31 @@ const UserPage: React.FC = () => {
       );
     }
     
+    // "No Access" view
     if (!hasAccess && !isLoadingBrands) {
       return (
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '24px', padding: '24px', height: '100%' }}>
-          <div style={{ fontSize: '64px' }}>🔒</div>
-          <h2 style={{ color: TEXT_PRIMARY.BLACK, margin: 0 }}>No Access</h2>
-          <p style={{ color: TEXT_PRIMARY.GREY, margin: 0, textAlign: 'center' }}>
-            User doesn't have access to <strong>{activeDashboardData?.dashboard_type}</strong> dashboard
-          </p>
-          <Button
-            variant="solid"
-            onClick={handleGrantAccess}
-            sx={{ backgroundColor: TEXT_PRIMARY.PURPLE, color: '#FFFFFF', padding: '10px 24px', fontSize: '14px', fontWeight: 600, ':hover': { backgroundColor: '#7A4CD9' }}}
-          >
-            Grant Access
-          </Button>
-        </div>
+        // 4. MOVED UserInfoBar here
+        <Box sx={{ p: 2, backgroundColor: '#F9FAFB' }}>
+          <UserInfoBar />
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '24px', padding: '24px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #ECF0FF' }}>
+            <div style={{ fontSize: '64px' }}>🔒</div>
+            <h2 style={{ color: TEXT_PRIMARY.BLACK, margin: 0 }}>No Access</h2>
+            <p style={{ color: TEXT_PRIMARY.GREY, margin: 0, textAlign: 'center' }}>
+              User doesn't have access to <strong>{activeDashboardData?.dashboard_type}</strong> dashboard
+            </p>
+            <Button
+              variant="solid"
+              onClick={handleGrantAccess}
+              sx={{ backgroundColor: TEXT_PRIMARY.PURPLE, color: '#FFFFFF', padding: '10px 24px', fontSize: '14px', fontWeight: 600, ':hover': { backgroundColor: '#7A4CD9' }}}
+            >
+              Grant Access
+            </Button>
+          </div>
+        </Box>
       );
     }
 
+    // "Has Access" view (or is loading brands)
     if (hasAccess || isLoadingBrands) {
       return (
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', height: '100%' }}>
@@ -326,14 +439,43 @@ const UserPage: React.FC = () => {
             onDeleteBrand={handleDeleteBrand}
             dashboardName={activeDashboardData?.dashboard_type || ''}
           />
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#FAFAFA', position: 'relative' }}>
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: TEXT_PRIMARY.GREY }}>
+          {/* 5. MOVED UserInfoBar here */}
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            backgroundColor: '#FAFAFB',
+            position: 'relative',
+            overflow: 'auto', // Add scroll to this panel
+            padding: '16px' // Add padding
+          }}>
+            
+            <UserInfoBar />
+
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: TEXT_PRIMARY.GREY,
+              backgroundColor: '#FFFFFF',
+              borderRadius: '8px',
+              border: '1px solid #ECF0FF',
+              minHeight: '300px' // Give it some min height
+            }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
-                <h3>User Access tree Coming Soon</h3>
+                <h3>Dashboard Content Coming Soon</h3>
+                <p>This area will display dashboard-specific content</p>
               </div>
             </div>
-            <div style={{ position: 'absolute', bottom: '24px', right: '24px' }}>
+
+            <div style={{
+              position: 'sticky', // Stick to the bottom of this scrolling panel
+              bottom: '16px',
+              marginTop: '16px', // Add space above
+              alignSelf: 'flex-end'
+            }}>
               <Button
                 variant="solid"
                 color="danger"
@@ -351,6 +493,7 @@ const UserPage: React.FC = () => {
       );
     }
 
+    // Fallback loading
     return (
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
         <CircularProgress sx={{ color: TEXT_PRIMARY.PURPLE }} />
@@ -360,7 +503,13 @@ const UserPage: React.FC = () => {
   
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {pageContent()}
+      
+      {/* 6. REMOVED the UserInfoBar from here */}
+
+      {/* The main content now fills the space, and UserInfoBar is *inside* it */}
+      <Box sx={{ flex: 1, overflow: 'auto', backgroundColor: '#F9FAFB' }}>
+        {pageContent()}
+      </Box>
 
       <BrandModal
         open={isModalOpen}
@@ -371,7 +520,6 @@ const UserPage: React.FC = () => {
         userId={userId || ''}
         selectedBrandId={selectedBrandForEdit?.brand_id}
         selectedBrandName={selectedBrandForEdit?.brand_name}
-        // 3. Pass the new memoized array to the modal
         assignedPlatformIds={memoizedAssignedPlatformIds}
         availableBrands={availableBrands}
         availablePlatforms={availablePlatforms}
