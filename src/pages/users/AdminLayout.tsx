@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import AdminHeader from './AdminHeader';
+import SharedHeader from '../../components/appComponents/SharedHeader';
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const AdminLayout: React.FC = () => {
       boxSizing: 'border-box',
       margin: '0px',
     }}>
-      <AdminHeader />
+      <SharedHeader showTabs={false} />
       <div style={{ height: 'calc(100vh - 50px)' }}>
         <Outlet />
       </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Option, Select, Stack, CircularProgress } from '@mui/joy';
 import { Search } from '@mui/icons-material';
 import toast from 'react-hot-toast';
@@ -6,7 +7,7 @@ import axios from 'axios';
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import Switch from '../../components/appComponents/inputs/Switch';
 import PaginationComponent from '../../components/appComponents/PaginationComponent';
-import AddUserModal,  {type AddUserPayload } from './AddUserModal';
+import AddUserModal, { type AddUserPayload } from './AddUserModal';
 import Input from '../../components/appComponents/inputs/Input';
 
 // API Base URL - adjust according to your setup
@@ -30,6 +31,7 @@ type FilterState = {
 };
 
 const AllUsersPage: React.FC = () => {
+  const navigate = useNavigate();
   const [filterState, setFilterState] = useState<FilterState>({
     limit: 10,
     page: 1,
@@ -370,10 +372,14 @@ const AllUsersPage: React.FC = () => {
                   width: '25%',
                   padding: '12px 16px',
                   borderRight: '1px solid #ECF0FF',
-                  color: '#1C1C1C',
+                  color: TEXT_PRIMARY.PURPLE,
                   fontSize: 12,
-                  wordBreak: 'break-word'
-                }}>
+                  wordBreak: 'break-word',
+                  cursor: 'pointer',
+                  textDecoration: 'underline'
+                }}
+                onClick={() => navigate(`/users/${user.user_id}`)}
+                >
                   {user.full_name}
                 </div>
 
