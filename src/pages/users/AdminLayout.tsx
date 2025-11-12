@@ -1,9 +1,23 @@
-import React, { useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Outlet, useNavigate, useOutletContext } from 'react-router-dom';
 import SharedHeader from '../../components/appComponents/SharedHeader';
+
+// Define the type for the tabs
+type TabInfo = {
+  tabs: Array<{ id: string; name: string; count?: number }>;
+  activeTab: string;
+  onTabChange: (tabId: string) => void;
+};
+
+// This type will be used by child components
+type OutletContextType = {
+  setTabInfo: React.Dispatch<React.SetStateAction<TabInfo | null>>;
+};
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
+  // State to hold tab info from the child route
+  const [tabInfo, setTabInfo] = useState<TabInfo | null>(null);
 
   // Check if user is logged in
   useEffect(() => {
@@ -16,15 +30,32 @@ const AdminLayout: React.FC = () => {
   return (
     <div style={{
       height: '100vh',
+      display: 'flex', // Use flex
+      flexDirection: 'column', // Arrange children vertically
       boxSizing: 'border-box',
       margin: '0px',
     }}>
-      <SharedHeader showTabs={false} />
-      <div style={{ height: 'calc(100vh - 50px)' }}>
-        <Outlet />
+      <SharedHeader
+        showTabs={!!tabInfo} // Show tabs only if tabInfo is set
+        tabs={tabInfo?.tabs}
+        activeTab={tabInfo?.activeTab}
+        onTabChange={tabInfo?.onTabChange}
+      />
+      <div style={{ 
+        flex: 1, // This makes the content area fill the remaining space
+        height: 'calc(100vh - 50px)', // Fallback height
+        overflow: 'auto' // Add scroll to content area
+      }}>
+        {/* Pass the 'setTabInfo' function down to the child routes */}
+        <Outlet context={{ setTabInfo } satisfies OutletContextType} />
       </div>
     </div>
   );
 };
+
+// Custom hook for child components to use
+export function useAdminLayout() {
+  return useOutletContext<OutletContextType>();
+}
 
 export default AdminLayout;

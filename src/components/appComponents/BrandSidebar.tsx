@@ -4,17 +4,16 @@ import { Search, Add, Delete, ExpandMore, ChevronRight, Edit } from '@mui/icons-
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import Input from './inputs/Input';
 
+// --- (Types are the same) ---
 type Platform = {
   platform_id: string;
   platform_name: string;
 };
-
 type Brand = {
   brand_id: string;
   brand_name: string;
   platforms: Platform[];
 };
-
 type BrandSidebarProps = {
   brands: Brand[];
   isLoading: boolean;
@@ -38,11 +37,14 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
 
   // Filter brands by search
   const filteredBrands = brands.filter(brand =>
-    brand && brand.brand_name && 
+    // FIX: This check prevents a crash if brand_name is null or undefined
+    brand && 
+    brand.brand_name &&
+    typeof brand.brand_name === 'string' &&
     brand.brand_name.toLowerCase().includes(searchInput.toLowerCase())
   );
 
-  // Toggle brand expansion
+  // --- (Handlers are the same) ---
   const toggleBrandExpansion = (brandId: string) => {
     const newExpanded = new Set(expandedBrands);
     if (newExpanded.has(brandId)) {
@@ -57,6 +59,7 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
     setSearchInput('');
   };
 
+  // --- (Render is the same) ---
   return (
     <div style={{
       width: '300px',
@@ -65,6 +68,7 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
       borderRight: '1px solid #ECF0FF',
       display: 'flex',
       flexDirection: 'column',
+      flexShrink: 0
     }}>
       {/* Search Bar */}
       <div style={{ padding: '16px', borderBottom: '1px solid #ECF0FF' }}>
@@ -117,63 +121,34 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
           variant={deleteMode ? 'solid' : 'plain'}
           color={deleteMode ? 'danger' : 'neutral'}
           onClick={() => setDeleteMode(!deleteMode)}
-          sx={{
-            fontSize: '14px',
-            padding: '4px 8px'
-          }}
+          sx={{ fontSize: '14px', padding: '4px 8px' }}
         >
           {deleteMode ? 'Done' : <Delete sx={{ fontSize: 18 }} />}
         </IconButton>
       </div>
 
       {/* Brand List */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '8px'
-      }}>
-        {/* Loading State */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
         {isLoading && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '24px'
-          }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '24px' }}>
             <CircularProgress size="sm" sx={{ color: TEXT_PRIMARY.PURPLE }} />
           </div>
         )}
-
-        {/* No Brands */}
         {!isLoading && filteredBrands.length === 0 && searchInput.length === 0 && (
-          <div style={{
-            textAlign: 'center',
-            padding: '24px',
-            color: TEXT_PRIMARY.GREY,
-            fontSize: '12px'
-          }}>
+          <div style={{ textAlign: 'center', padding: '24px', color: TEXT_PRIMARY.GREY, fontSize: '12px' }}>
             <div style={{ fontSize: '32px', marginBottom: '8px' }}>📦</div>
             No brands assigned yet
           </div>
         )}
-
-        {/* No Search Results */}
         {!isLoading && filteredBrands.length === 0 && searchInput.length > 0 && (
-          <div style={{
-            textAlign: 'center',
-            padding: '24px',
-            color: TEXT_PRIMARY.GREY,
-            fontSize: '12px'
-          }}>
+          <div style={{ textAlign: 'center', padding: '24px', color: TEXT_PRIMARY.GREY, fontSize: '12px' }}>
             <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</div>
             No brands found for "{searchInput}"
           </div>
         )}
-
-        {/* Brand Items */}
         {!isLoading && filteredBrands.map((brand) => {
+          if (!brand || !brand.brand_id) return null;
           const isExpanded = expandedBrands.has(brand.brand_id);
-
           return (
             <div
               key={brand.brand_id}
@@ -185,53 +160,15 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
               }}
             >
               {/* Brand Header */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '10px 12px',
-                  backgroundColor: isExpanded ? '#F9F7FE' : TEXT_PRIMARY.WHITE,
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s',
-                }}
-              >
-                {/* Delete Icon (if in delete mode) */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '10px 12px', backgroundColor: isExpanded ? '#F9F7FE' : TEXT_PRIMARY.WHITE, transition: 'background-color 0.2s' }}>
                 {deleteMode && (
-                  <IconButton
-                    size="sm"
-                    color="danger"
-                    variant="plain"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteBrand(brand.brand_id);
-                    }}
-                    sx={{ marginRight: '8px' }}
-                  >
+                  <IconButton size="sm" color="danger" variant="plain" onClick={(e) => { e.stopPropagation(); onDeleteBrand(brand.brand_id); }} sx={{ marginRight: '8px' }}>
                     <Delete sx={{ fontSize: 16 }} />
                   </IconButton>
                 )}
-
-                {/* Expand/Collapse Icon */}
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleBrandExpansion(brand.brand_id);
-                  }}
-                  style={{
-                    marginRight: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {isExpanded ? (
-                    <ExpandMore sx={{ fontSize: 18, color: TEXT_PRIMARY.GREY }} />
-                  ) : (
-                    <ChevronRight sx={{ fontSize: 18, color: TEXT_PRIMARY.GREY }} />
-                  )}
+                <div onClick={(e) => { e.stopPropagation(); toggleBrandExpansion(brand.brand_id); }} style={{ marginRight: '8px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  {isExpanded ? <ExpandMore sx={{ fontSize: 18, color: TEXT_PRIMARY.GREY }} /> : <ChevronRight sx={{ fontSize: 18, color: TEXT_PRIMARY.GREY }} />}
                 </div>
-
-                {/* Brand Name - Clicking opens Edit Modal */}
                 <div
                   onClick={() => onEditBrand(brand.brand_id)}
                   style={{
@@ -239,59 +176,28 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
                     fontSize: '13px',
                     fontWeight: 500,
                     color: TEXT_PRIMARY.BLACK,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                   }}
+                  title={brand.brand_name}
                 >
                   {brand.brand_name}
-                  <span style={{
-                    marginLeft: '6px',
-                    fontSize: '11px',
-                    color: TEXT_PRIMARY.GREY,
-                    fontWeight: 400
-                  }}>
-                    ({brand.platforms.length})
+                  <span style={{ marginLeft: '6px', fontSize: '11px', color: TEXT_PRIMARY.GREY, fontWeight: 400 }}>
+                    ({brand.platforms?.length || 0})
                   </span>
                 </div>
-
-                {/* Edit Icon */}
-                <IconButton
-                  size="sm"
-                  variant="plain"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditBrand(brand.brand_id);
-                  }}
-                  sx={{ ml: 1 }}
-                >
+                <IconButton size="sm" variant="plain" onClick={(e) => { e.stopPropagation(); onEditBrand(brand.brand_id); }} sx={{ ml: 1 }}>
                   <Edit sx={{ fontSize: 14, color: TEXT_PRIMARY.GREY }} />
                 </IconButton>
               </div>
-
               {/* Platform List (Expanded) */}
-              {isExpanded && (
-                <div style={{
-                  backgroundColor: '#FAFAFA',
-                  padding: '8px 12px 8px 40px',
-                  borderTop: '1px solid #ECF0FF'
-                }}>
+              {isExpanded && brand.platforms && (
+                <div style={{ backgroundColor: '#FAFAFA', padding: '8px 12px 8px 40px', borderTop: '1px solid #ECF0FF' }}>
                   {brand.platforms.map((platform) => (
-                    <div
-                      key={platform.platform_id}
-                      style={{
-                        padding: '6px 8px',
-                        fontSize: '12px',
-                        color: TEXT_PRIMARY.GREY,
-                        display: 'flex',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <span style={{
-                        width: '4px',
-                        height: '4px',
-                        borderRadius: '50%',
-                        backgroundColor: TEXT_PRIMARY.PURPLE,
-                        marginRight: '8px'
-                      }} />
+                    <div key={platform.platform_id} style={{ padding: '6px 8px', fontSize: '12px', color: TEXT_PRIMARY.GREY, display: 'flex', alignItems: 'center' }}>
+                      <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: TEXT_PRIMARY.PURPLE, marginRight: '8px' }} />
                       {platform.platform_name}
                     </div>
                   ))}
@@ -303,10 +209,7 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
       </div>
 
       {/* Add New Brand Button */}
-      <div style={{
-        padding: '16px',
-        borderTop: '1px solid #ECF0FF',
-      }}>
+      <div style={{ padding: '16px', borderTop: '1px solid #ECF0FF' }}>
         <button
           onClick={onAddBrand}
           style={{

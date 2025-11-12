@@ -17,12 +17,12 @@ import {
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import toast from 'react-hot-toast';
 
+// --- (Types are the same) ---
 type Platform = {
   platform_id: string;
   platform_name: string;
   platform_logo_url?: string;
 };
-
 type AvailableBrand = {
   brand_id: string;
   brand_name: string;
@@ -35,16 +35,13 @@ type BrandModalProps = {
   dashboardName: string;
   dashboardId: string;
   userId: string;
-  // For edit mode
   selectedBrandId?: string;
   selectedBrandName?: string;
-  assignedPlatformIds?: string[];
-  // Data
+  assignedPlatformIds?: string[]; // This prop is now stable
   availableBrands: AvailableBrand[];
   availablePlatforms: Platform[];
   isLoadingBrands: boolean;
   isLoadingPlatforms: boolean;
-  // Actions
   onFetchPlatforms: (brandId: string) => Promise<void>;
   onSubmit: (brandId: string, platformIds: string[]) => Promise<void>;
 };
@@ -58,7 +55,7 @@ const BrandModal: React.FC<BrandModalProps> = ({
   userId,
   selectedBrandId,
   selectedBrandName,
-  assignedPlatformIds = [],
+  assignedPlatformIds, // No default needed, will be stable or undefined
   availableBrands,
   availablePlatforms,
   isLoadingBrands,
@@ -70,33 +67,34 @@ const BrandModal: React.FC<BrandModalProps> = ({
   const [selectedPlatforms, setSelectedPlatforms] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize for edit mode
+  // This useEffect is now safe. It only runs when the modal
+  // truly opens or the data it needs to edit changes.
   useEffect(() => {
-    if (mode === 'edit' && selectedBrandId) {
+    if (mode === 'edit' && selectedBrandId && assignedPlatformIds) {
       setSelectedBrand(selectedBrandId);
       setSelectedPlatforms(new Set(assignedPlatformIds));
     } else {
+      // Reset for 'add' mode
       setSelectedBrand('');
       setSelectedPlatforms(new Set());
     }
-  }, [mode, selectedBrandId, assignedPlatformIds, open]);
+  }, [mode, selectedBrandId, assignedPlatformIds, open]); // 'open' ensures reset on re-open
 
   // Fetch platforms when brand changes (add mode only)
   useEffect(() => {
     if (mode === 'add' && selectedBrand && open) {
       onFetchPlatforms(selectedBrand);
     }
-  }, [selectedBrand, mode, open]);
+  }, [selectedBrand, mode, open, onFetchPlatforms]);
 
-  // Handle brand selection change
-  const handleBrandChange = async (brandId: string | null) => {
+  // --- (All handlers are the same) ---
+  const handleBrandChange = (brandId: string | null) => {
     if (brandId) {
       setSelectedBrand(brandId);
-      setSelectedPlatforms(new Set()); // Clear platform selection
+      setSelectedPlatforms(new Set());
     }
   };
 
-  // Toggle individual platform
   const togglePlatform = (platformId: string) => {
     const newSelected = new Set(selectedPlatforms);
     if (newSelected.has(platformId)) {
@@ -107,38 +105,30 @@ const BrandModal: React.FC<BrandModalProps> = ({
     setSelectedPlatforms(newSelected);
   };
 
-  // Toggle select all
   const toggleSelectAll = () => {
     if (selectedPlatforms.size === availablePlatforms.length) {
-      // Deselect all
       setSelectedPlatforms(new Set());
     } else {
-      // Select all
       setSelectedPlatforms(new Set(availablePlatforms.map(p => p.platform_id)));
     }
   };
 
-  // Handle submit
   const handleSubmit = async () => {
     if (!selectedBrand) {
       toast.error('Please select a brand');
       return;
     }
-
     if (selectedPlatforms.size === 0) {
       toast.error('Please select at least one platform');
       return;
     }
-
     setIsSubmitting(true);
-
     try {
       await onSubmit(selectedBrand, Array.from(selectedPlatforms));
       toast.success(mode === 'add' ? 'Brand added successfully' : 'Brand updated successfully');
       onClose();
     } catch (error) {
       console.error('Error submitting brand:', error);
-      // Error toast handled by parent
     } finally {
       setIsSubmitting(false);
     }
@@ -146,8 +136,6 @@ const BrandModal: React.FC<BrandModalProps> = ({
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setSelectedBrand('');
-      setSelectedPlatforms(new Set());
       onClose();
     }
   };
@@ -155,6 +143,7 @@ const BrandModal: React.FC<BrandModalProps> = ({
   const isSelectAllChecked = availablePlatforms.length > 0 &&
     selectedPlatforms.size === availablePlatforms.length;
 
+  // --- (Render is the same) ---
   return (
     <Modal open={open} onClose={handleClose}>
       <ModalDialog sx={{ width: 500, maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -168,8 +157,7 @@ const BrandModal: React.FC<BrandModalProps> = ({
               <FormLabel>Select Brand:</FormLabel>
               {isLoadingBrands ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px' }}>
-                  <CircularProgress size="sm" />
-                  <Typography level="body-sm">Loading brands...</Typography>
+                  <CircularProgress size="sm" /> <Typography level="body-sm">Loading brands...</Typography>
                 </div>
               ) : (
                 <Select
@@ -197,65 +185,32 @@ const BrandModal: React.FC<BrandModalProps> = ({
             </FormControl>
 
             {/* Platforms Section */}
-            {selectedBrand && (
+            {(selectedBrand || mode === 'edit') && (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <FormLabel sx={{ mb: 1 }}>Platforms:</FormLabel>
-
                 {isLoadingPlatforms ? (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '24px'
-                  }}>
-                    <CircularProgress size="sm" />
-                    <Typography level="body-sm">Loading platforms...</Typography>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '24px' }}>
+                    <CircularProgress size="sm" /> <Typography level="body-sm">Loading platforms...</Typography>
                   </div>
                 ) : availablePlatforms.length === 0 ? (
-                  <div style={{
-                    textAlign: 'center',
-                    padding: '24px',
-                    color: TEXT_PRIMARY.GREY,
-                    fontSize: '12px'
-                  }}>
+                  <div style={{ textAlign: 'center', padding: '24px', color: TEXT_PRIMARY.GREY, fontSize: '12px' }}>
                     No platforms available for this brand
                   </div>
                 ) : (
-                  <div style={{
-                    border: '1px solid #E0E0E0',
-                    borderRadius: '6px',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    maxHeight: '300px'
-                  }}>
+                  <div style={{ border: '1px solid #E0E0E0', borderRadius: '6px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '300px' }}>
                     {/* Select All */}
-                    <div style={{
-                      padding: '10px 12px',
-                      backgroundColor: '#F9F9F9',
-                      borderBottom: '1px solid #E0E0E0',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}>
+                    <div style={{ padding: '10px 12px', backgroundColor: '#F9F9F9', borderBottom: '1px solid #E0E0E0', display: 'flex', alignItems: 'center' }}>
                       <Checkbox
                         checked={isSelectAllChecked}
                         onChange={toggleSelectAll}
-                        label={
-                          <span style={{ fontSize: '13px', fontWeight: 500 }}>
-                            Select All ({availablePlatforms.length})
-                          </span>
-                        }
+                        label={<span style={{ fontSize: '13px', fontWeight: 500 }}>Select All ({availablePlatforms.length})</span>}
                       />
                     </div>
-
                     {/* Platform List */}
                     <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
                       {availablePlatforms.map((platform) => {
-                        const isAssigned = mode === 'edit' && assignedPlatformIds.includes(platform.platform_id);
+                        const isAssigned = mode === 'edit' && assignedPlatformIds?.includes(platform.platform_id);
                         const isChecked = selectedPlatforms.has(platform.platform_id);
-
                         return (
                           <div
                             key={platform.platform_id}
@@ -266,33 +221,18 @@ const BrandModal: React.FC<BrandModalProps> = ({
                               justifyContent: 'space-between',
                               borderRadius: '4px',
                               transition: 'background-color 0.2s',
-                              backgroundColor: isChecked ? '#F9F7FE' : 'transparent'
+                              backgroundColor: isChecked ? '#F9F7FE' : 'transparent',
+                              cursor: 'pointer'
                             }}
-                            onMouseEnter={(e) => {
-                              if (!isChecked) e.currentTarget.style.backgroundColor = '#F5F5F5';
-                            }}
-                            onMouseLeave={(e) => {
-                              if (!isChecked) e.currentTarget.style.backgroundColor = 'transparent';
-                            }}
+                            onClick={() => togglePlatform(platform.platform_id)}
                           >
                             <Checkbox
                               checked={isChecked}
                               onChange={() => togglePlatform(platform.platform_id)}
-                              label={
-                                <span style={{ fontSize: '13px' }}>
-                                  {platform.platform_name}
-                                </span>
-                              }
+                              label={<span style={{ fontSize: '13px' }}>{platform.platform_name}</span>}
                             />
                             {isAssigned && (
-                              <span style={{
-                                fontSize: '11px',
-                                color: TEXT_PRIMARY.PURPLE,
-                                backgroundColor: '#E5DBFF',
-                                padding: '2px 8px',
-                                borderRadius: '10px',
-                                fontWeight: 500
-                              }}>
+                              <span style={{ fontSize: '11px', color: TEXT_PRIMARY.PURPLE, backgroundColor: '#E5DBFF', padding: '2px 8px', borderRadius: '10px', fontWeight: 500 }}>
                                 ✓ Assigned
                               </span>
                             )}
@@ -306,32 +246,20 @@ const BrandModal: React.FC<BrandModalProps> = ({
             )}
 
             {/* Action Buttons */}
-            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-              <Button
-                variant="outlined"
-                color="neutral"
-                onClick={handleClose}
-                disabled={isSubmitting}
-                sx={{ flex: 1 }}
-              >
+            <Stack direction="row" spacing={2} sx={{ mt: 2, pt: 2, borderTop: '1px solid #E0E0E0' }}>
+              <Button variant="outlined" color="neutral" onClick={handleClose} disabled={isSubmitting} sx={{ flex: 1 }}>
                 Cancel
               </Button>
               <Button
                 onClick={handleSubmit}
                 loading={isSubmitting}
-                disabled={
-                  isSubmitting ||
-                  !selectedBrand ||
-                  selectedPlatforms.size === 0 ||
-                  isLoadingPlatforms
-                }
+                disabled={isSubmitting || !selectedBrand || selectedPlatforms.size === 0 || isLoadingPlatforms}
                 sx={{
                   flex: 1,
                   backgroundColor: TEXT_PRIMARY.PURPLE,
                   color: '#fff',
-                  ':hover': {
-                    backgroundColor: '#7A4CD9'
-                  }
+                  ':hover': { backgroundColor: '#7A4CD9' },
+                  '&.Mui-disabled': { backgroundColor: '#D1D5F1' }
                 }}
               >
                 {mode === 'add' ? 'Save & Publish' : 'Update'}

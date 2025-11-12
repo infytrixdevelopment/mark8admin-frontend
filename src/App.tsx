@@ -14,10 +14,11 @@ function App() {
         {/* Admin Routes (with layout) */}
         <Route path="/" element={<AdminLayout />}>
           <Route path="users" element={<AllUsersPage />} />
+          <Route path="users/:userId" element={<UserPage />} /> {/* <-- FIX: Moved this inside */}
         </Route>
 
-        {/* User Detail Page (no layout - has its own header) */}
-        <Route path="/users/:userId" element={<UserPage />} />
+        {/* Removed the standalone route */}
+        {/* <Route path="/users/:userId" element={<UserPage />} /> */}
       </Routes>
     </BrowserRouter>
   );
