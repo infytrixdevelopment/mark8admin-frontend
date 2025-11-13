@@ -8,8 +8,9 @@ import BrandSidebar from '../../components/appComponents/BrandSidebar';
 import BrandModal from './BrandModal';
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import { useAdminLayout } from './AdminLayout';
+import AccessTree from '../../components/AccessTree'; 
 
-// --- (All type definitions are the same) ---
+// --- TYPE DEFINITIONS ---
 type Dashboard = {
   dashboard_id: string;
   dashboard_type: string;
@@ -40,6 +41,22 @@ type User = {
   user_type: string;
   organisation: string;
 };
+// --- 2. Naye component ke data ke liye type ---
+type AccessTreeDashboard = {
+  dashboard_id: string;
+  dashboard_name: string;
+  color: string;
+  brands: AccessTreeBrand[];
+};
+type AccessTreeBrand = {
+  brand_id: string;
+  brand_name: string;
+  platforms: AccessTreePlatform[];
+};
+type AccessTreePlatform = {
+  platform_id: string;
+  platform_name: string;
+};
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
@@ -49,27 +66,59 @@ const UserPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { setTabInfo } = useAdminLayout();
 
-  // --- (All states are the same) ---
+  // --- STATES ---
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [activeDashboard, setActiveDashboard] = useState<string>('');
   const [brands, setBrands] = useState<Brand[]>([]);
   const [hasAccess, setHasAccess] = useState<boolean>(false);
   const [userInfo, setUserInfo] = useState<User | null>(null);
   const [brandCounts, setBrandCounts] = useState<Record<string, number>>({});
+  
+  // --- 3. Naye state ---
+  const [accessTree, setAccessTree] = useState<AccessTreeDashboard[]>([]);
+
+  // (Modal states)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedBrandForEdit, setSelectedBrandForEdit] = useState<Brand | null>(null);
   const [availableBrands, setAvailableBrands] = useState<AvailableBrand[]>([]);
   const [availablePlatforms, setAvailablePlatforms] = useState<Platform[]>([]);
+  
+  // (Loading states)
   const [isLoadingDashboards, setIsLoadingDashboards] = useState(true);
   const [isLoadingBrands, setIsLoadingBrands] = useState(false);
   const [isLoadingAvailableBrands, setIsLoadingAvailableBrands] = useState(false);
   const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(false);
   const [isDeletingDashboard, setIsDeletingDashboard] = useState(false);
+  
+  // --- 4. Naya loading state ---
+  const [isLoadingTree, setIsLoadingTree] = useState(false);
 
   const getToken = () => localStorage.getItem('token');
 
-  // --- (All functions up to handleDeleteMultipleBrands are the same) ---
+  // --- API FUNCTIONS (MEMOIZED) ---
+  
+  // --- 5. Naya function: fetchAccessTree ---
+  const fetchAccessTree = useCallback(async () => {
+    if (!userId) return;
+    setIsLoadingTree(true);
+    try {
+      const token = getToken();
+      const response = await axios.get(`${API_BASE_URL}/api/admin/users/${userId}/access-tree`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setAccessTree(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching access tree:', error);
+      toast.error('Failed to load access tree');
+    } finally {
+      setIsLoadingTree(false);
+    }
+  }, [userId]);
+  
+  // (fetchUserInfo, fetchDashboards... sab same hain)
   const fetchUserInfo = useCallback(async () => {
     if (!userId) return;
     try {
@@ -154,14 +203,17 @@ const UserPage: React.FC = () => {
       const token = getToken();
       const response = await axios.get(
         `${API_BASE_URL}/api/admin/brands/${brandId}/platforms`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { Authorization: `Bearer ${token}` },
+          params: { dashboardId: activeDashboard }
+        }
       );
       if (response.data.success) {
         setAvailablePlatforms(response.data.data.platforms);
       }
     } catch (error) { toast.error('Failed to load platforms');
     } finally { setIsLoadingPlatforms(false); }
-  }, []);
+  }, [activeDashboard]);
 
   const handleBrandModalSubmit = useCallback(async (brandId: string, platformIds: string[]) => {
     try {
@@ -184,6 +236,7 @@ const UserPage: React.FC = () => {
       });
       if (response.data.success) {
         fetchUserBrands();
+        fetchAccessTree(); // --- 6. Refresh tree on success ---
       } else {
         throw new Error(response.data.message);
       }
@@ -191,7 +244,7 @@ const UserPage: React.FC = () => {
       toast.error(error.response?.data?.message || 'Failed to save brand');
       throw error;
     }
-  }, [hasAccess, modalMode, userId, activeDashboard, fetchUserBrands]);
+  }, [hasAccess, modalMode, userId, activeDashboard, fetchUserBrands, fetchAccessTree]); // 7. Add dependency
 
   const handleDashboardChange = useCallback((dashboardId: string) => {
     setActiveDashboard(dashboardId);
@@ -231,14 +284,14 @@ const UserPage: React.FC = () => {
     setIsModalOpen(true);
   }, [fetchAvailableBrands]);
 
-  const handleEditBrand = useCallback(async (brandId: string) => {
-    const brand = brands.find(b => b.brand_id === brandId);
-    if (!brand) return;
-    setModalMode('edit');
-    setSelectedBrandForEdit(brand);
-    await fetchBrandPlatforms(brandId);
-    setIsModalOpen(true);
-  }, [brands, fetchBrandPlatforms]);
+const handleEditBrand = useCallback(async (brandId: string) => {
+  const brand = brands.find(b => b.brand_id === brandId);
+  if (!brand) return;
+  setModalMode('edit');
+  setSelectedBrandForEdit(brand);
+  await fetchBrandPlatforms(brandId);
+  setIsModalOpen(true);
+}, [brands, fetchBrandPlatforms]);
 
   const handleDeleteDashboardAccess = useCallback(async (skipConfirmation = false) => {
     const dashboardName = dashboards.find(d => d.dashboard_id === activeDashboard)?.dashboard_type;
@@ -256,36 +309,33 @@ const UserPage: React.FC = () => {
       );
 
       if (response.data.success) {
-        if (!skipConfirmation) { // Only show this if NOT called from the bulk delete
+        if (!skipConfirmation) {
           toast.success('Dashboard access revoked successfully');
         }
-        fetchUserBrands(); // This will refresh UI and show "No Access"
+        fetchUserBrands();
+        fetchAccessTree(); // --- 8. Refresh tree on success ---
       }
     } catch (error: any) { 
       toast.error('Failed to revoke access');
     } finally { 
       setIsDeletingDashboard(false); 
     }
-  }, [userId, activeDashboard, dashboards, fetchUserBrands]);
+  }, [userId, activeDashboard, dashboards, fetchUserBrands, fetchAccessTree]); // 9. Add dependency
 
-  // --- UPDATED: handleDeleteMultipleBrands ---
   const handleDeleteMultipleBrands = useCallback(async (brandIds: string[]) => {
     
     const totalBrandsBeforeDelete = brands.length;
     const brandsToDeleteCount = brandIds.length;
 
-    // --- 1. NEW LOGIC: Check if deleting all brands ---
     if (brandsToDeleteCount === totalBrandsBeforeDelete && brandsToDeleteCount > 0) {
-      // We are deleting all brands. Call the master delete function instead.
       const dashboardName = dashboards.find(d => d.dashboard_id === activeDashboard)?.dashboard_type;
       if (window.confirm(`This will remove all ${brandsToDeleteCount} brands and revoke access to the ${dashboardName} dashboard. Are you sure?`)) {
         toast.success('All brands removed. Revoking dashboard access...');
-        handleDeleteDashboardAccess(true); // Call with skipConfirmation=true
+        handleDeleteDashboardAccess(true);
       }
-      return; // Stop here. Do not run the loop.
+      return;
     }
 
-    // --- 2. EXISTING LOGIC: Only run if we are NOT deleting all brands ---
     if (!window.confirm(`Are you sure you want to remove ${brandIds.length} brand(s)?`)) return;
 
     const token = getToken();
@@ -298,7 +348,6 @@ const UserPage: React.FC = () => {
 
     try {
       const results = await Promise.allSettled(deletePromises);
-      
       const successful = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
 
@@ -309,17 +358,16 @@ const UserPage: React.FC = () => {
         toast.error(`${failed} brand(s) could not be removed`);
       }
       
-      // We still have brands left, just refresh the list.
       fetchUserBrands();
+      fetchAccessTree(); // --- 10. Refresh tree on success ---
 
     } catch (error) {
       console.error('Error during bulk delete:', error);
       toast.error('An error occurred while removing brands');
     }
-  }, [userId, activeDashboard, fetchUserBrands, brands.length, handleDeleteDashboardAccess, dashboards]); // Added dependencies
+  }, [userId, activeDashboard, fetchUserBrands, brands.length, handleDeleteDashboardAccess, dashboards, fetchAccessTree]); // 11. Add dependency
 
-
-  // --- (All other Effects, Memos, and Render functions are the same) ---
+  // --- EFFECTS ---
   useEffect(() => {
     if (dashboards.length > 0) {
       setTabInfo({
@@ -340,7 +388,8 @@ const UserPage: React.FC = () => {
   useEffect(() => {
     fetchDashboards();
     fetchUserInfo();
-  }, [fetchDashboards, fetchUserInfo]);
+    fetchAccessTree(); // --- 12. Call on initial load ---
+  }, [fetchDashboards, fetchUserInfo, fetchAccessTree]); // 13. Add dependency
 
   useEffect(() => {
     if (activeDashboard) {
@@ -354,6 +403,7 @@ const UserPage: React.FC = () => {
     return selectedBrandForEdit?.platforms.map(p => p.platform_id);
   }, [selectedBrandForEdit]);
 
+  // (UserInfoBar component is the same)
   const UserInfoBar = () => (
     <Box
       sx={{
@@ -421,6 +471,7 @@ const UserPage: React.FC = () => {
     </Box>
   );
 
+  // --- RENDER ---
   const pageContent = () => {
     if (isLoadingDashboards) {
       return (
@@ -472,24 +523,31 @@ const UserPage: React.FC = () => {
             overflow: 'auto',
             padding: '16px'
           }}>
+            
             <UserInfoBar />
-            <div style={{
+            
+            {/* --- 14. Yahaan naya component render karein --- */}
+            <Box sx={{
               flex: 1,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              color: TEXT_PRIMARY.GREY,
               backgroundColor: '#FFFFFF',
               borderRadius: '8px',
               border: '1px solid #ECF0FF',
-              minHeight: '300px'
+              minHeight: '300px',
+              overflow: 'hidden' // Taaki tree border ke andar rahe
             }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
-                <h3>Dashboard Content Coming Soon</h3>
-                <p>This area will display dashboard-specific content</p>
-              </div>
-            </div>
+              <Box sx={{ 
+                p: 2, 
+                borderBottom: '1px solid #ECF0FF', 
+                backgroundColor: '#F9F9F9' 
+              }}>
+                <Typography level="title-md">Total Access Tree</Typography>
+              </Box>
+              <Box sx={{ overflow: 'auto' }}>
+                <AccessTree data={accessTree} isLoading={isLoadingTree} />
+              </Box>
+            </Box>
+            {/* --- End new component render --- */}
+
             <div style={{
               position: 'sticky',
               bottom: '16px',
@@ -500,7 +558,7 @@ const UserPage: React.FC = () => {
                 variant="solid"
                 color="danger"
                 startDecorator={<DeleteForever />}
-                onClick={() => handleDeleteDashboardAccess(false)} // Call with false
+                onClick={() => handleDeleteDashboardAccess(false)}
                 loading={isDeletingDashboard}
                 disabled={isDeletingDashboard}
                 sx={{ backgroundColor: '#D32F2F', ':hover': { backgroundColor: '#B71C1C' }}}
