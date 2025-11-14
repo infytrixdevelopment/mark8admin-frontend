@@ -8,12 +8,12 @@ import BrandSidebar from '../../components/appComponents/BrandSidebar';
 import BrandModal from './BrandModal';
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import { useAdminLayout } from './AdminLayout';
-import AccessTree from '../../components/AccessTree'; 
+import AccessTree from '../../components/AccessTree'; // Import the new component
 
 // --- TYPE DEFINITIONS ---
-type Dashboard = {
-  dashboard_id: string;
-  dashboard_type: string;
+type App = {
+  app_id: string;
+  app_name: string;
   color?: string;
   status: string;
 };
@@ -41,11 +41,9 @@ type User = {
   user_type: string;
   organisation: string;
 };
-// --- 2. Naye component ke data ke liye type ---
-type AccessTreeDashboard = {
-  dashboard_id: string;
-  dashboard_name: string;
-  color: string;
+type AccessTreeApp = {
+  app_id: string;
+  app_name: string;
   brands: AccessTreeBrand[];
 };
 type AccessTreeBrand = {
@@ -64,41 +62,33 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000
 const UserPage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { setTabInfo } = useAdminLayout();
+  const { setAppTabInfo } = useAdminLayout();
 
   // --- STATES ---
-  const [dashboards, setDashboards] = useState<Dashboard[]>([]);
-  const [activeDashboard, setActiveDashboard] = useState<string>('');
+  const [apps, setApps] = useState<App[]>([]);
+  const [activeAppId, setActiveAppId] = useState<string>('');
   const [brands, setBrands] = useState<Brand[]>([]);
   const [hasAccess, setHasAccess] = useState<boolean>(false);
   const [userInfo, setUserInfo] = useState<User | null>(null);
   const [brandCounts, setBrandCounts] = useState<Record<string, number>>({});
-  
-  // --- 3. Naye state ---
-  const [accessTree, setAccessTree] = useState<AccessTreeDashboard[]>([]);
-
-  // (Modal states)
+  const [accessTree, setAccessTree] = useState<AccessTreeApp[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedBrandForEdit, setSelectedBrandForEdit] = useState<Brand | null>(null);
   const [availableBrands, setAvailableBrands] = useState<AvailableBrand[]>([]);
   const [availablePlatforms, setAvailablePlatforms] = useState<Platform[]>([]);
-  
-  // (Loading states)
-  const [isLoadingDashboards, setIsLoadingDashboards] = useState(true);
+  const [isLoadingApps, setIsLoadingApps] = useState(true);
   const [isLoadingBrands, setIsLoadingBrands] = useState(false);
   const [isLoadingAvailableBrands, setIsLoadingAvailableBrands] = useState(false);
   const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(false);
-  const [isDeletingDashboard, setIsDeletingDashboard] = useState(false);
-  
-  // --- 4. Naya loading state ---
+  const [isDeletingApp, setIsDeletingApp] = useState(false);
   const [isLoadingTree, setIsLoadingTree] = useState(false);
 
   const getToken = () => localStorage.getItem('token');
 
   // --- API FUNCTIONS (MEMOIZED) ---
   
-  // --- 5. Naya function: fetchAccessTree ---
+  // fetchAccessTree function with the fix
   const fetchAccessTree = useCallback(async () => {
     if (!userId) return;
     setIsLoadingTree(true);
@@ -114,11 +104,11 @@ const UserPage: React.FC = () => {
       console.error('Error fetching access tree:', error);
       toast.error('Failed to load access tree');
     } finally {
-      setIsLoadingTree(false);
+      setIsLoadingTree(false); // <-- THIS IS THE FIX
     }
   }, [userId]);
   
-  // (fetchUserInfo, fetchDashboards... sab same hain)
+  // (All other functions are the same as before)
   const fetchUserInfo = useCallback(async () => {
     if (!userId) return;
     try {
@@ -135,67 +125,67 @@ const UserPage: React.FC = () => {
     }
   }, [userId]);
 
-  const fetchDashboards = useCallback(async () => {
-    setIsLoadingDashboards(true);
+  const fetchApps = useCallback(async () => {
+    setIsLoadingApps(true);
     try {
       const token = getToken();
-      const response = await axios.get(`${API_BASE_URL}/api/admin/dashboards`, {
+      const response = await axios.get(`${API_BASE_URL}/api/admin/apps`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
-        const dashboardList = response.data.data.dashboards;
-        setDashboards(dashboardList);
-        const dashboardParam = searchParams.get('dashboard');
-        if (dashboardParam && dashboardList.some((d: Dashboard) => d.dashboard_id === dashboardParam)) {
-          setActiveDashboard(dashboardParam);
-        } else if (dashboardList.length > 0) {
-          const firstDashboardId = dashboardList[0].dashboard_id;
-          setActiveDashboard(firstDashboardId);
-          if (dashboardParam !== firstDashboardId) {
-            setSearchParams({ dashboard: firstDashboardId }, { replace: true });
+        const appList = response.data.data.apps;
+        setApps(appList);
+        const appParam = searchParams.get('app');
+        if (appParam && appList.some((app: App) => app.app_id === appParam)) {
+          setActiveAppId(appParam);
+        } else if (appList.length > 0) {
+          const firstAppId = appList[0].app_id;
+          setActiveAppId(firstAppId);
+          if (appParam !== firstAppId) {
+            setSearchParams({ app: firstAppId }, { replace: true });
           }
         }
       }
-    } catch (error: any) { toast.error('Failed to load dashboards');
-    } finally { setIsLoadingDashboards(false); }
+    } catch (error: any) { toast.error('Failed to load apps');
+    } finally { setIsLoadingApps(false); }
   }, [searchParams, setSearchParams]);
 
   const fetchUserBrands = useCallback(async () => {
-    if (!userId || !activeDashboard) return;
+    if (!userId || !activeAppId) return;
     setIsLoadingBrands(true);
     setHasAccess(false);
     try {
       const token = getToken();
       const accessResponse = await axios.get(
-        `${API_BASE_URL}/api/admin/users/${userId}/dashboards/${activeDashboard}/access`,
+        `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/access`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (accessResponse.data.success && accessResponse.data.data.hasAccess) {
         setHasAccess(true);
         const brandsResponse = await axios.get(
-          `${API_BASE_URL}/api/admin/users/${userId}/dashboards/${activeDashboard}/brands`,
+          `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/brands`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (brandsResponse.data.success) {
           const fetchedBrands = brandsResponse.data.data.brands;
           setBrands(fetchedBrands);
-          setBrandCounts(prev => ({ ...prev, [activeDashboard]: fetchedBrands.length }));
+          setBrandCounts(prev => ({ ...prev, [activeAppId]: fetchedBrands.length }));
         }
       } else {
         setHasAccess(false);
         setBrands([]);
-        setBrandCounts(prev => ({ ...prev, [activeDashboard]: 0 }));
+        setBrandCounts(prev => ({ ...prev, [activeAppId]: 0 }));
       }
     } catch (error: any) {
       if (error.response?.status === 404) {
         setHasAccess(false);
         setBrands([]);
-        setBrandCounts(prev => ({ ...prev, [activeDashboard]: 0 }));
+        setBrandCounts(prev => ({ ...prev, [activeAppId]: 0 }));
       }
     } finally {
       setIsLoadingBrands(false);
     }
-  }, [userId, activeDashboard]);
+  }, [userId, activeAppId]);
 
   const fetchBrandPlatforms = useCallback(async (brandId: string) => {
     setIsLoadingPlatforms(true);
@@ -205,7 +195,7 @@ const UserPage: React.FC = () => {
         `${API_BASE_URL}/api/admin/brands/${brandId}/platforms`,
         { 
           headers: { Authorization: `Bearer ${token}` },
-          params: { dashboardId: activeDashboard }
+          params: { appId: activeAppId }
         }
       );
       if (response.data.success) {
@@ -213,20 +203,20 @@ const UserPage: React.FC = () => {
       }
     } catch (error) { toast.error('Failed to load platforms');
     } finally { setIsLoadingPlatforms(false); }
-  }, [activeDashboard]);
+  }, [activeAppId]);
 
   const handleBrandModalSubmit = useCallback(async (brandId: string, platformIds: string[]) => {
     try {
       const token = getToken();
       let endpoint, method;
       if (!hasAccess && modalMode === 'add') {
-        endpoint = `${API_BASE_URL}/api/admin/users/${userId}/dashboards/${activeDashboard}/grant-access`;
+        endpoint = `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/grant-access`;
         method = 'post';
       } else if (modalMode === 'add') {
-        endpoint = `${API_BASE_URL}/api/admin/users/${userId}/dashboards/${activeDashboard}/brands`;
+        endpoint = `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/brands`;
         method = 'post';
       } else {
-        endpoint = `${API_BASE_URL}/api/admin/users/${userId}/dashboards/${activeDashboard}/brands/${brandId}/platforms`;
+        endpoint = `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/brands/${brandId}/platforms`;
         method = 'put';
       }
       const payload = modalMode === 'add' ? { brandId, platformIds } : { platformIds };
@@ -236,7 +226,7 @@ const UserPage: React.FC = () => {
       });
       if (response.data.success) {
         fetchUserBrands();
-        fetchAccessTree(); // --- 6. Refresh tree on success ---
+        fetchAccessTree();
       } else {
         throw new Error(response.data.message);
       }
@@ -244,15 +234,15 @@ const UserPage: React.FC = () => {
       toast.error(error.response?.data?.message || 'Failed to save brand');
       throw error;
     }
-  }, [hasAccess, modalMode, userId, activeDashboard, fetchUserBrands, fetchAccessTree]); // 7. Add dependency
+  }, [hasAccess, modalMode, userId, activeAppId, fetchUserBrands, fetchAccessTree]);
 
-  const handleDashboardChange = useCallback((dashboardId: string) => {
-    setActiveDashboard(dashboardId);
-    setSearchParams({ dashboard: dashboardId }, { replace: true });
+  const handleAppChange = useCallback((appId: string) => {
+    setActiveAppId(appId);
+    setSearchParams({ app: appId }, { replace: true });
   }, [setSearchParams]);
 
   const fetchAvailableBrands = useCallback(async () => {
-    if (!userId || !activeDashboard) return;
+    if (!userId || !activeAppId) return;
     setIsLoadingAvailableBrands(true);
     try {
       const token = getToken();
@@ -260,7 +250,7 @@ const UserPage: React.FC = () => {
         `${API_BASE_URL}/api/admin/brands/available`,
         {
           headers: { Authorization: `Bearer ${token}` },
-          params: { userId, dashboardId: activeDashboard }
+          params: { userId, appId: activeAppId }
         }
       );
       if (response.data.success) {
@@ -268,7 +258,7 @@ const UserPage: React.FC = () => {
       }
     } catch (error) { toast.error('Failed to load available brands');
     } finally { setIsLoadingAvailableBrands(false); }
-  }, [userId, activeDashboard]);
+  }, [userId, activeAppId]);
   
   const handleAddBrand = useCallback(() => {
     setModalMode('add');
@@ -284,54 +274,53 @@ const UserPage: React.FC = () => {
     setIsModalOpen(true);
   }, [fetchAvailableBrands]);
 
-const handleEditBrand = useCallback(async (brandId: string) => {
-  const brand = brands.find(b => b.brand_id === brandId);
-  if (!brand) return;
-  setModalMode('edit');
-  setSelectedBrandForEdit(brand);
-  await fetchBrandPlatforms(brandId);
-  setIsModalOpen(true);
-}, [brands, fetchBrandPlatforms]);
+  const handleEditBrand = useCallback(async (brandId: string) => {
+    const brand = brands.find(b => b.brand_id === brandId);
+    if (!brand) return;
+    setModalMode('edit');
+    setSelectedBrandForEdit(brand);
+    await fetchBrandPlatforms(brandId);
+    setIsModalOpen(true);
+  }, [brands, fetchBrandPlatforms]);
 
-  const handleDeleteDashboardAccess = useCallback(async (skipConfirmation = false) => {
-    const dashboardName = dashboards.find(d => d.dashboard_id === activeDashboard)?.dashboard_type;
+  const handleDeleteAppAccess = useCallback(async (skipConfirmation = false) => {
+    const appName = apps.find(d => d.app_id === activeAppId)?.app_name;
     
-    if (!skipConfirmation && !window.confirm(`Are you sure you want to revoke access to ${dashboardName} dashboard? This will remove all brands and platforms.`)) {
+    if (!skipConfirmation && !window.confirm(`Are you sure you want to revoke access to ${appName} app? This will remove all brands and platforms.`)) {
       return;
     }
 
-    setIsDeletingDashboard(true);
+    setIsDeletingApp(true);
     try {
       const token = getToken();
       const response = await axios.delete(
-        `${API_BASE_URL}/api/admin/users/${userId}/dashboards/${activeDashboard}`,
+        `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data.success) {
         if (!skipConfirmation) {
-          toast.success('Dashboard access revoked successfully');
+          toast.success('App access revoked successfully');
         }
         fetchUserBrands();
-        fetchAccessTree(); // --- 8. Refresh tree on success ---
+        fetchAccessTree();
       }
     } catch (error: any) { 
       toast.error('Failed to revoke access');
     } finally { 
-      setIsDeletingDashboard(false); 
+      setIsDeletingApp(false); 
     }
-  }, [userId, activeDashboard, dashboards, fetchUserBrands, fetchAccessTree]); // 9. Add dependency
+  }, [userId, activeAppId, apps, fetchUserBrands, fetchAccessTree]);
 
   const handleDeleteMultipleBrands = useCallback(async (brandIds: string[]) => {
-    
     const totalBrandsBeforeDelete = brands.length;
     const brandsToDeleteCount = brandIds.length;
 
     if (brandsToDeleteCount === totalBrandsBeforeDelete && brandsToDeleteCount > 0) {
-      const dashboardName = dashboards.find(d => d.dashboard_id === activeDashboard)?.dashboard_type;
-      if (window.confirm(`This will remove all ${brandsToDeleteCount} brands and revoke access to the ${dashboardName} dashboard. Are you sure?`)) {
-        toast.success('All brands removed. Revoking dashboard access...');
-        handleDeleteDashboardAccess(true);
+      const appName = apps.find(d => d.app_id === activeAppId)?.app_name;
+      if (window.confirm(`This will remove all ${brandsToDeleteCount} brands and revoke access to the ${appName} app. Are you sure?`)) {
+        toast.success('All brands removed. Revoking app access...');
+        handleDeleteAppAccess(true);
       }
       return;
     }
@@ -341,7 +330,7 @@ const handleEditBrand = useCallback(async (brandId: string) => {
     const token = getToken();
     const deletePromises = brandIds.map(brandId => {
       return axios.delete(
-        `${API_BASE_URL}/api/admin/users/${userId}/dashboards/${activeDashboard}/brands/${brandId}`,
+        `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/brands/${brandId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
     });
@@ -359,45 +348,44 @@ const handleEditBrand = useCallback(async (brandId: string) => {
       }
       
       fetchUserBrands();
-      fetchAccessTree(); // --- 10. Refresh tree on success ---
-
+      fetchAccessTree();
     } catch (error) {
       console.error('Error during bulk delete:', error);
       toast.error('An error occurred while removing brands');
     }
-  }, [userId, activeDashboard, fetchUserBrands, brands.length, handleDeleteDashboardAccess, dashboards, fetchAccessTree]); // 11. Add dependency
+  }, [userId, activeAppId, fetchUserBrands, brands.length, handleDeleteAppAccess, apps, fetchAccessTree]);
 
   // --- EFFECTS ---
   useEffect(() => {
-    if (dashboards.length > 0) {
-      setTabInfo({
-        tabs: dashboards.map(d => ({
-          id: d.dashboard_id,
-          name: d.dashboard_type,
-          count: brandCounts[d.dashboard_id]
+    if (apps.length > 0) {
+      setAppTabInfo({
+        tabs: apps.map(app => ({
+          id: app.app_id,
+          name: app.app_name,
+          count: brandCounts[app.app_id]
         })),
-        activeTab: activeDashboard,
-        onTabChange: handleDashboardChange,
+        activeTab: activeAppId,
+        onTabChange: handleAppChange,
       });
     }
     return () => {
-      setTabInfo(null);
+      setAppTabInfo(null);
     };
-  }, [setTabInfo, dashboards, activeDashboard, brandCounts, handleDashboardChange]);
+  }, [setAppTabInfo, apps, activeAppId, brandCounts, handleAppChange]);
   
   useEffect(() => {
-    fetchDashboards();
+    fetchApps();
     fetchUserInfo();
-    fetchAccessTree(); // --- 12. Call on initial load ---
-  }, [fetchDashboards, fetchUserInfo, fetchAccessTree]); // 13. Add dependency
+    fetchAccessTree();
+  }, [fetchApps, fetchUserInfo, fetchAccessTree]);
 
   useEffect(() => {
-    if (activeDashboard) {
+    if (activeAppId) {
       fetchUserBrands();
     }
-  }, [activeDashboard, fetchUserBrands]);
+  }, [activeAppId, fetchUserBrands]);
 
-  const activeDashboardData = dashboards.find(d => d.dashboard_id === activeDashboard);
+  const activeAppData = apps.find(d => d.app_id === activeAppId);
 
   const memoizedAssignedPlatformIds = useMemo(() => {
     return selectedBrandForEdit?.platforms.map(p => p.platform_id);
@@ -473,7 +461,7 @@ const handleEditBrand = useCallback(async (brandId: string) => {
 
   // --- RENDER ---
   const pageContent = () => {
-    if (isLoadingDashboards) {
+    if (isLoadingApps) {
       return (
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
           <CircularProgress sx={{ color: TEXT_PRIMARY.PURPLE }} />
@@ -489,7 +477,7 @@ const handleEditBrand = useCallback(async (brandId: string) => {
             <div style={{ fontSize: '64px' }}>🔒</div>
             <h2 style={{ color: TEXT_PRIMARY.BLACK, margin: 0 }}>No Access</h2>
             <p style={{ color: TEXT_PRIMARY.GREY, margin: 0, textAlign: 'center' }}>
-              User doesn't have access to <strong>{activeDashboardData?.dashboard_type}</strong> dashboard
+              User doesn't have access to <strong>{activeAppData?.app_name}</strong> app
             </p>
             <Button
               variant="solid"
@@ -512,7 +500,7 @@ const handleEditBrand = useCallback(async (brandId: string) => {
             onAddBrand={handleAddBrand}
             onEditBrand={handleEditBrand}
             onDeleteMultipleBrands={handleDeleteMultipleBrands}
-            dashboardName={activeDashboardData?.dashboard_type || ''}
+            appName={activeAppData?.app_name || ''}
           />
           <div style={{
             flex: 1,
@@ -526,14 +514,13 @@ const handleEditBrand = useCallback(async (brandId: string) => {
             
             <UserInfoBar />
             
-            {/* --- 14. Yahaan naya component render karein --- */}
             <Box sx={{
               flex: 1,
               backgroundColor: '#FFFFFF',
               borderRadius: '8px',
               border: '1px solid #ECF0FF',
               minHeight: '300px',
-              overflow: 'hidden' // Taaki tree border ke andar rahe
+              overflow: 'hidden'
             }}>
               <Box sx={{ 
                 p: 2, 
@@ -546,7 +533,6 @@ const handleEditBrand = useCallback(async (brandId: string) => {
                 <AccessTree data={accessTree} isLoading={isLoadingTree} />
               </Box>
             </Box>
-            {/* --- End new component render --- */}
 
             <div style={{
               position: 'sticky',
@@ -558,12 +544,12 @@ const handleEditBrand = useCallback(async (brandId: string) => {
                 variant="solid"
                 color="danger"
                 startDecorator={<DeleteForever />}
-                onClick={() => handleDeleteDashboardAccess(false)}
-                loading={isDeletingDashboard}
-                disabled={isDeletingDashboard}
+                onClick={() => handleDeleteAppAccess(false)}
+                loading={isDeletingApp}
+                disabled={isDeletingApp}
                 sx={{ backgroundColor: '#D32F2F', ':hover': { backgroundColor: '#B71C1C' }}}
               >
-                Revoke {activeDashboardData?.dashboard_type} Access
+                Revoke {activeAppData?.app_name} Access
               </Button>
             </div>
           </div>
@@ -589,8 +575,8 @@ const handleEditBrand = useCallback(async (brandId: string) => {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         mode={modalMode}
-        dashboardName={activeDashboardData?.dashboard_type || ''}
-        dashboardId={activeDashboard}
+        appName={activeAppData?.app_name || ''}
+        appId={activeAppId}
         userId={userId || ''}
         selectedBrandId={selectedBrandForEdit?.brand_id}
         selectedBrandName={selectedBrandForEdit?.brand_name}

@@ -5,11 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { PRIMARY, TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import UserProfile from "../../ui/icons/Small/UserProfile.svg";
-import AppLogo from './AppLogo';
+import AppLogo from './AppLogo'; // Make sure this path is correct
 import "./Header.css";
 
 type SharedHeaderProps = {
-  showTabs?: boolean; // Optional: Show dashboard tabs or not
+  showTabs?: boolean; // Optional: Show app tabs or not
   tabs?: Array<{ id: string; name: string; count?: number }>;
   activeTab?: string;
   onTabChange?: (tabId: string) => void;
@@ -74,6 +74,7 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
             }}
             onClick={onLogoClickHandler}
           >
+            {/* Make sure AppLogo component is imported correctly */}
             <AppLogo height={26} />
           </div>
         </Box>
@@ -118,7 +119,7 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
         </Dropdown>
       </div>
 
-      {/* Dashboard Tabs Bar (Optional) */}
+      {/* App Tabs Bar (Optional) */}
       {showTabs && tabs.length > 0 && (
         <div style={{
           backgroundColor: TEXT_PRIMARY.WHITE,

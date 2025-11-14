@@ -3,21 +3,21 @@ import { Outlet, useNavigate, useOutletContext } from 'react-router-dom';
 import SharedHeader from '../../components/appComponents/SharedHeader';
 
 // Define the type for the tabs
-type TabInfo = {
+type AppTabInfo = {
   tabs: Array<{ id: string; name: string; count?: number }>;
   activeTab: string;
   onTabChange: (tabId: string) => void;
 };
 
 // This type will be used by child components
-type OutletContextType = {
-  setTabInfo: React.Dispatch<React.SetStateAction<TabInfo | null>>;
+type AppContextType = {
+  setAppTabInfo: React.Dispatch<React.SetStateAction<AppTabInfo | null>>;
 };
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   // State to hold tab info from the child route
-  const [tabInfo, setTabInfo] = useState<TabInfo | null>(null);
+  const [appTabInfo, setAppTabInfo] = useState<AppTabInfo | null>(null);
 
   // Check if user is logged in
   useEffect(() => {
@@ -36,18 +36,18 @@ const AdminLayout: React.FC = () => {
       margin: '0px',
     }}>
       <SharedHeader
-        showTabs={!!tabInfo} // Show tabs only if tabInfo is set
-        tabs={tabInfo?.tabs}
-        activeTab={tabInfo?.activeTab}
-        onTabChange={tabInfo?.onTabChange}
+        showTabs={!!appTabInfo} // Show tabs only if appTabInfo is set
+        tabs={appTabInfo?.tabs}
+        activeTab={appTabInfo?.activeTab}
+        onTabChange={appTabInfo?.onTabChange}
       />
       <div style={{ 
         flex: 1, // This makes the content area fill the remaining space
         height: 'calc(100vh - 50px)', // Fallback height
         overflow: 'auto' // Add scroll to content area
       }}>
-        {/* Pass the 'setTabInfo' function down to the child routes */}
-        <Outlet context={{ setTabInfo } satisfies OutletContextType} />
+        {/* Pass the 'setAppTabInfo' function down to the child routes */}
+        <Outlet context={{ setAppTabInfo } satisfies AppContextType} />
       </div>
     </div>
   );
@@ -55,7 +55,7 @@ const AdminLayout: React.FC = () => {
 
 // Custom hook for child components to use
 export function useAdminLayout() {
-  return useOutletContext<OutletContextType>();
+  return useOutletContext<AppContextType>();
 }
 
 export default AdminLayout;

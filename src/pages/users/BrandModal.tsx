@@ -17,12 +17,12 @@ import {
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import toast from 'react-hot-toast';
 
-// --- (Types are the same) ---
 type Platform = {
   platform_id: string;
   platform_name: string;
   platform_logo_url?: string;
 };
+
 type AvailableBrand = {
   brand_id: string;
   brand_name: string;
@@ -32,12 +32,12 @@ type BrandModalProps = {
   open: boolean;
   onClose: () => void;
   mode: 'add' | 'edit';
-  dashboardName: string;
-  dashboardId: string;
+  appName: string;
+  appId: string;
   userId: string;
   selectedBrandId?: string;
   selectedBrandName?: string;
-  assignedPlatformIds?: string[]; // This prop is now stable
+  assignedPlatformIds?: string[];
   availableBrands: AvailableBrand[];
   availablePlatforms: Platform[];
   isLoadingBrands: boolean;
@@ -50,12 +50,12 @@ const BrandModal: React.FC<BrandModalProps> = ({
   open,
   onClose,
   mode,
-  dashboardName,
-  dashboardId,
+  appName,
+  appId,
   userId,
   selectedBrandId,
   selectedBrandName,
-  assignedPlatformIds, // No default needed, will be stable or undefined
+  assignedPlatformIds,
   availableBrands,
   availablePlatforms,
   isLoadingBrands,
@@ -67,27 +67,22 @@ const BrandModal: React.FC<BrandModalProps> = ({
   const [selectedPlatforms, setSelectedPlatforms] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // This useEffect is now safe. It only runs when the modal
-  // truly opens or the data it needs to edit changes.
   useEffect(() => {
     if (mode === 'edit' && selectedBrandId && assignedPlatformIds) {
       setSelectedBrand(selectedBrandId);
       setSelectedPlatforms(new Set(assignedPlatformIds));
     } else {
-      // Reset for 'add' mode
       setSelectedBrand('');
       setSelectedPlatforms(new Set());
     }
-  }, [mode, selectedBrandId, assignedPlatformIds, open]); // 'open' ensures reset on re-open
+  }, [mode, selectedBrandId, assignedPlatformIds, open]);
 
-  // Fetch platforms when brand changes (add mode only)
   useEffect(() => {
     if (mode === 'add' && selectedBrand && open) {
       onFetchPlatforms(selectedBrand);
     }
   }, [selectedBrand, mode, open, onFetchPlatforms]);
 
-  // --- (All handlers are the same) ---
   const handleBrandChange = (brandId: string | null) => {
     if (brandId) {
       setSelectedBrand(brandId);
@@ -143,12 +138,11 @@ const BrandModal: React.FC<BrandModalProps> = ({
   const isSelectAllChecked = availablePlatforms.length > 0 &&
     selectedPlatforms.size === availablePlatforms.length;
 
-  // --- (Render is the same) ---
   return (
     <Modal open={open} onClose={handleClose}>
       <ModalDialog sx={{ width: 500, maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <DialogTitle>
-          {mode === 'add' ? `Add Brand to ${dashboardName}` : `Edit Brand: ${selectedBrandName}`}
+          {mode === 'add' ? `Add Brand to ${appName}` : `Edit Brand: ${selectedBrandName}`}
         </DialogTitle>
         <DialogContent sx={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <Stack spacing={2} sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -198,7 +192,6 @@ const BrandModal: React.FC<BrandModalProps> = ({
                   </div>
                 ) : (
                   <div style={{ border: '1px solid #E0E0E0', borderRadius: '6px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '300px' }}>
-                    {/* Select All */}
                     <div style={{ padding: '10px 12px', backgroundColor: '#F9F9F9', borderBottom: '1px solid #E0E0E0', display: 'flex', alignItems: 'center' }}>
                       <Checkbox
                         checked={isSelectAllChecked}
@@ -206,7 +199,6 @@ const BrandModal: React.FC<BrandModalProps> = ({
                         label={<span style={{ fontSize: '13px', fontWeight: 500 }}>Select All ({availablePlatforms.length})</span>}
                       />
                     </div>
-                    {/* Platform List */}
                     <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
                       {availablePlatforms.map((platform) => {
                         const isAssigned = mode === 'edit' && assignedPlatformIds?.includes(platform.platform_id);

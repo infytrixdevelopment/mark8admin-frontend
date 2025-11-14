@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { IconButton, CircularProgress, Checkbox, Button } from '@mui/joy'; // 1. Import Checkbox and Button
-import { Search, Add, Delete, ExpandMore, ChevronRight, Edit, Close } from '@mui/icons-material'; // 2. Import Close
+import { IconButton, CircularProgress, Checkbox, Button } from '@mui/joy';
+import { Search, Add, Delete, ExpandMore, ChevronRight, Edit } from '@mui/icons-material';
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import Input from './inputs/Input';
 
@@ -20,9 +20,8 @@ type BrandSidebarProps = {
   isLoading: boolean;
   onAddBrand: () => void;
   onEditBrand: (brandId: string) => void;
-  // 3. Change prop to accept multiple IDs
   onDeleteMultipleBrands: (brandIds: string[]) => void; 
-  dashboardName: string;
+  appName: string; // Changed from dashboardName
 };
 
 const BrandSidebar: React.FC<BrandSidebarProps> = ({
@@ -30,14 +29,12 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
   isLoading,
   onAddBrand,
   onEditBrand,
-  onDeleteMultipleBrands, // 4. Use new prop
-  dashboardName
+  onDeleteMultipleBrands,
+  appName // Changed from dashboardName
 }) => {
   const [searchInput, setSearchInput] = useState<string>('');
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
   const [deleteMode, setDeleteMode] = useState<boolean>(false);
-  
-  // 5. Add new state to track selected brands
   const [selectedBrands, setSelectedBrands] = useState(new Set<string>());
 
   const filteredBrands = brands.filter(brand =>
@@ -61,7 +58,6 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
     setSearchInput('');
   };
 
-  // 6. New handler for checkbox selection
   const handleToggleBrandSelection = (brandId: string) => {
     const newSelected = new Set(selectedBrands);
     if (newSelected.has(brandId)) {
@@ -72,16 +68,13 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
     setSelectedBrands(newSelected);
   };
 
-  // 7. New handler to reset/cancel delete mode
   const handleCancelDeleteMode = () => {
     setDeleteMode(false);
-    setSelectedBrands(new Set()); // Clear selections
+    setSelectedBrands(new Set());
   };
 
-  // 8. New handler to confirm and execute deletion
   const handleConfirmDelete = () => {
     onDeleteMultipleBrands(Array.from(selectedBrands));
-    // Reset state after triggering delete
     setDeleteMode(false);
     setSelectedBrands(new Set());
   };
@@ -126,15 +119,15 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
         </div>
       </div>
 
-      {/* 9. UPDATED Header: Brands + Delete Toggle */}
+      {/* Header: Brands + Delete Toggle */}
       <div style={{
         padding: '12px 16px',
         borderBottom: '1px solid #ECF0FF',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: deleteMode ? '#FFF9F9' : '#F9F9F9', // Red-ish tint in delete mode
-        minHeight: '60px' // Ensure height is consistent
+        backgroundColor: deleteMode ? '#FFF9F9' : '#F9F9F9',
+        minHeight: '60px'
       }}>
         <div style={{
           fontSize: '14px',
@@ -145,7 +138,6 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
         </div>
         
         {deleteMode ? (
-          // --- Show this UI in Delete Mode ---
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <Button
               size="sm"
@@ -166,12 +158,11 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
             </Button>
           </div>
         ) : (
-          // --- Show this UI in Normal Mode ---
           <IconButton
             size="sm"
             variant={'plain'}
             color={'neutral'}
-            onClick={() => setDeleteMode(true)} // Just enter delete mode
+            onClick={() => setDeleteMode(true)}
             sx={{
               fontSize: '14px',
               padding: '4px 8px'
@@ -188,7 +179,6 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
         overflowY: 'auto',
         padding: '8px'
       }}>
-        {/* ... (Loading, No Brands, No Search Results are the same) ... */}
         {isLoading && (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '24px' }}>
             <CircularProgress size="sm" sx={{ color: TEXT_PRIMARY.PURPLE }} />
@@ -206,8 +196,6 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
             No brands found for "{searchInput}"
           </div>
         )}
-
-        {/* 10. UPDATED Brand Items */}
         {!isLoading && filteredBrands.map((brand) => {
           if (!brand || !brand.brand_id) return null;
           const isExpanded = expandedBrands.has(brand.brand_id);
@@ -221,14 +209,10 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
                 borderRadius: '6px',
                 overflow: 'hidden',
                 border: '1px solid #ECF0FF',
-                // Highlight if selected in delete mode
                 backgroundColor: (deleteMode && isSelected) ? '#F9F7FE' : TEXT_PRIMARY.WHITE,
               }}
             >
-              {/* Brand Header */}
               <div style={{ display: 'flex', alignItems: 'center', padding: '10px 12px' }}>
-                
-                {/* --- Show Checkbox in Delete Mode --- */}
                 {deleteMode && (
                   <div onClick={(e) => e.stopPropagation()} style={{ marginRight: '8px' }}>
                     <Checkbox
@@ -237,8 +221,6 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
                     />
                   </div>
                 )}
-                
-                {/* --- Show Expand/Collapse Icon in Normal Mode --- */}
                 {!deleteMode && (
                   <div
                     onClick={(e) => { e.stopPropagation(); toggleBrandExpansion(brand.brand_id); }}
@@ -247,16 +229,14 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
                     {isExpanded ? <ExpandMore sx={{ fontSize: 18, color: TEXT_PRIMARY.GREY }} /> : <ChevronRight sx={{ fontSize: 18, color: TEXT_PRIMARY.GREY }} />}
                   </div>
                 )}
-
-                {/* Brand Name */}
                 <div
-                  onClick={() => !deleteMode && onEditBrand(brand.brand_id)} // Click to edit only if NOT in delete mode
+                  onClick={() => !deleteMode && onEditBrand(brand.brand_id)}
                   style={{
                     flex: 1,
                     fontSize: '13px',
                     fontWeight: 500,
                     color: TEXT_PRIMARY.BLACK,
-                    cursor: deleteMode ? 'default' : 'pointer', // No pointer in delete mode
+                    cursor: deleteMode ? 'default' : 'pointer',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -268,16 +248,12 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
                     ({brand.platforms?.length || 0})
                   </span>
                 </div>
-
-                {/* Edit Icon (Only in Normal Mode) */}
                 {!deleteMode && (
                   <IconButton size="sm" variant="plain" onClick={(e) => { e.stopPropagation(); onEditBrand(brand.brand_id); }} sx={{ ml: 1 }}>
                     <Edit sx={{ fontSize: 14, color: TEXT_PRIMARY.GREY }} />
                   </IconButton>
                 )}
               </div>
-
-              {/* Platform List (Expanded) */}
               {isExpanded && !deleteMode && brand.platforms && (
                 <div style={{ backgroundColor: '#FAFAFA', padding: '8px 12px 8px 40px', borderTop: '1px solid #ECF0FF' }}>
                   {brand.platforms.map((platform) => (
@@ -297,7 +273,7 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
       <div style={{ padding: '16px', borderTop: '1px solid #ECF0FF' }}>
         <button
           onClick={onAddBrand}
-          disabled={deleteMode} // Disable button in delete mode
+          disabled={deleteMode}
           style={{
             width: '100%',
             padding: '10px',

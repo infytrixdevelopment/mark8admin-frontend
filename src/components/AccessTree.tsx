@@ -15,14 +15,14 @@ type AccessTreeBrand = {
   platforms: AccessTreePlatform[];
 };
 
-type AccessTreeDashboard = {
-  dashboard_id: string;
-  dashboard_name: string;
+type AccessTreeApp = {
+  app_id: string;
+  app_name: string;
   brands: AccessTreeBrand[];
 };
 
 type AccessTreeProps = {
-  data: AccessTreeDashboard[];
+  data: AccessTreeApp[];
   isLoading: boolean;
 };
 
@@ -69,23 +69,23 @@ const AccessTree: React.FC<AccessTreeProps> = ({ data, isLoading }) => {
       <Box sx={{ p: 4, textAlign: 'center', color: TEXT_PRIMARY.GREY }}>
         <Typography level="h4" sx={{ mb: 1 }}>🌳</Typography>
         <Typography>No access tree data found.</Typography>
-        <Typography level="body-sm">Try granting access to a dashboard.</Typography>
+        <Typography level="body-sm">Try granting access to an app.</Typography>
       </Box>
     );
   }
 
   return (
     <Box>
-      {data.map((dashboard) => (
-        <Box key={dashboard.dashboard_id} sx={{ mb: 1 }}>
-<TreeItem
-  icon={<Folder />}
-  label={dashboard.dashboard_name}
-  level={0}
-  color={TEXT_PRIMARY.PURPLE}
-  bgColor="#F9F9F9"
-/>
-          {dashboard.brands.map((brand) => (
+      {data.map((app) => (
+        <Box key={app.app_id} sx={{ mb: 1 }}>
+          <TreeItem
+            icon={<Folder />}
+            label={app.app_name}
+            level={0}
+            color={TEXT_PRIMARY.PURPLE}
+            bgColor="#F9F9F9"
+          />
+          {app.brands.map((brand) => (
             <Box key={brand.brand_id}>
               <TreeItem
                 icon={<Store />}
