@@ -516,6 +516,8 @@ const UserPage: React.FC = () => {
             
             <Box sx={{
               flex: 1,
+              display:'flex',
+              flexDirection:'column',
               backgroundColor: '#FFFFFF',
               borderRadius: '8px',
               border: '1px solid #ECF0FF',
@@ -536,11 +538,12 @@ const UserPage: React.FC = () => {
 
             <div style={{
               position: 'sticky',
-              bottom: '16px',
+              bottom: '2px',
               marginTop: '16px',
               alignSelf: 'flex-end'
             }}>
               <Button
+              
                 variant="solid"
                 color="danger"
                 startDecorator={<DeleteForever />}

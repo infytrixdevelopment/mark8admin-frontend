@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
   ModalDialog,
@@ -32,7 +32,7 @@ type BrandModalProps = {
   open: boolean;
   onClose: () => void;
   mode: 'add' | 'edit';
-  appName: string;
+  appName: string; // <-- 1. ADD THIS LINE
   appId: string;
   userId: string;
   selectedBrandId?: string;
@@ -50,7 +50,7 @@ const BrandModal: React.FC<BrandModalProps> = ({
   open,
   onClose,
   mode,
-  appName,
+  appName, // <-- 2. ADD THIS LINE
   appId,
   userId,
   selectedBrandId,
@@ -135,6 +135,39 @@ const BrandModal: React.FC<BrandModalProps> = ({
     }
   };
 
+  // --- NEW SORTING LOGIC ---
+  const sortedPlatforms = useMemo(() => {
+    if (!availablePlatforms) {
+      return [];
+    }
+
+    // Create a copy to avoid mutating the prop
+    const platformsToSort = [...availablePlatforms];
+
+    // In 'add' mode, or if assignedPlatformIds isn't provided, just sort alphabetically
+    if (mode === 'add' || !assignedPlatformIds) {
+      return platformsToSort.sort((a, b) => a.platform_name.localeCompare(b.platform_name));
+    }
+
+    // In 'edit' mode, sort by 'assigned' status first, then alphabetically
+    return platformsToSort.sort((a, b) => {
+      // Use assignedPlatformIds for the initial sort, not the changing state
+      const isASelected = assignedPlatformIds.includes(a.platform_id);
+      const isBSelected = assignedPlatformIds.includes(b.platform_id);
+
+      if (isASelected && !isBSelected) {
+        return -1; // a (selected) comes before b (not selected)
+      }
+      if (!isASelected && isBSelected) {
+        return 1; // b (selected) comes before a (not selected)
+      }
+
+      // If both are selected or both are not selected, sort alphabetically
+      return a.platform_name.localeCompare(b.platform_name);
+    });
+  }, [availablePlatforms, assignedPlatformIds, mode]);
+  // --- END NEW LOGIC ---
+
   const isSelectAllChecked = availablePlatforms.length > 0 &&
     selectedPlatforms.size === availablePlatforms.length;
 
@@ -142,6 +175,7 @@ const BrandModal: React.FC<BrandModalProps> = ({
     <Modal open={open} onClose={handleClose}>
       <ModalDialog sx={{ width: 500, maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <DialogTitle>
+          {/* This line will now work correctly */}
           {mode === 'add' ? `Add Brand to ${appName}` : `Edit Brand: ${selectedBrandName}`}
         </DialogTitle>
         <DialogContent sx={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -200,7 +234,8 @@ const BrandModal: React.FC<BrandModalProps> = ({
                       />
                     </div>
                     <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
-                      {availablePlatforms.map((platform) => {
+                      {/* --- UPDATED TO USE sortedPlatforms --- */}
+                      {sortedPlatforms.map((platform) => {
                         const isAssigned = mode === 'edit' && assignedPlatformIds?.includes(platform.platform_id);
                         const isChecked = selectedPlatforms.has(platform.platform_id);
                         return (

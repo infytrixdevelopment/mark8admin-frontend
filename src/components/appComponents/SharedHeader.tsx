@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { PRIMARY, TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import UserProfile from "../../ui/icons/Small/UserProfile.svg";
 import AppLogo from './AppLogo'; // Make sure this path is correct
-import "./Header.css";
+// import "./Header.css";
 
 type SharedHeaderProps = {
   showTabs?: boolean; // Optional: Show app tabs or not
@@ -55,7 +55,7 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
     }}>
       {/* Top Black Bar */}
       <div style={{
-        backgroundColor: PRIMARY.BLACK,
+        backgroundColor: "rgb(18, 24, 43)",
         height: "50px",
         display: "flex",
         padding: "0px 24px",
@@ -113,7 +113,15 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
             </Box>
             <KeyboardArrowDown />
           </MenuButton>
-          <Menu sx={{ minWidth: 120 }}>
+          <Menu sx={{ minWidth: 160 }}>
+            <MenuItem onClick={() => navigate('/users')}>
+              User Management
+            </MenuItem>
+            
+            <MenuItem onClick={() => navigate('/brand-management')}>
+              Brand Management
+            </MenuItem>
+            
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </Dropdown>
@@ -123,7 +131,8 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
       {showTabs && tabs.length > 0 && (
         <div style={{
           backgroundColor: TEXT_PRIMARY.WHITE,
-          height: "50px",
+          // --- 1. UPDATED HEIGHT ---
+          height: "42px",
           padding: "0px 24px",
           display: "flex",
           alignItems: "center",
@@ -134,14 +143,16 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
             <div
               style={{
                 display: "flex",
-                padding: "8px 24px",
+                // --- 2. UPDATED PADDING ---
+                padding: "8px 16px",
                 justifyContent: "center",
                 alignItems: "center",
                 gap: "8px",
                 alignSelf: "stretch",
                 borderBottom: activeTab === tab.id
-                  ? `3px solid ${TEXT_PRIMARY.PURPLE}`
-                  : "3px solid transparent",
+                  // --- 3. UPDATED BORDER ---
+                  ? `2px solid ${TEXT_PRIMARY.PURPLE}`
+                  : "2px solid transparent",
                 cursor: "pointer",
                 transition: 'all 0.2s ease-in-out',
                 backgroundColor: activeTab === tab.id ? '#F9F7FE' : 'transparent',
@@ -151,10 +162,11 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
             >
               <div style={{
                 color: activeTab === tab.id ? TEXT_PRIMARY.PURPLE : TEXT_PRIMARY.GREY,
-                fontSize: "14px",
+                // --- 4. UPDATED FONT SIZE ---
+                fontSize: "12px",
                 fontStyle: "normal",
                 fontWeight: activeTab === tab.id ? 600 : 400,
-                lineHeight: "20px",
+                lineHeight: "16px",
               }}>
                 {tab.name}
                 {tab.count !== undefined && (
@@ -162,7 +174,8 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
                     marginLeft: '6px',
                     padding: '2px 6px',
                     borderRadius: '10px',
-                    fontSize: '11px',
+                    // --- 5. UPDATED COUNT FONT SIZE ---
+                    fontSize: '10px',
                     backgroundColor: activeTab === tab.id ? TEXT_PRIMARY.PURPLE : '#E0E0E0',
                     color: activeTab === tab.id ? '#FFFFFF' : TEXT_PRIMARY.GREY,
                   }}>

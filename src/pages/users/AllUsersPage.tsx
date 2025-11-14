@@ -325,10 +325,12 @@ const AllUsersPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Table Body */}
+        {/* --- TABLE BODY --- */}
         <div style={{
           position: 'relative',
-          height: 'calc(100vh - 92px - 80px - 48px - 60px - 24px)',
+          // --- UPDATED HEIGHT ---
+          // 100vh - 50px (Header) - 80px (Search Bar) - 48px (Table Header) - 60px (Footer) - 24px (Bottom Space)
+          height: 'calc(100vh - 50px - 80px - 48px - 60px - 24px)',
           overflowY: 'auto',
           backgroundColor: TEXT_PRIMARY.WHITE
         }}>
@@ -513,3 +515,6 @@ const AllUsersPage: React.FC = () => {
 };
 
 export default AllUsersPage;
+
+
+                          
