@@ -8,8 +8,9 @@ import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import AddDashboardModal from './AddDashboardModal'; 
+import {BASE_URL} from "../../constants/appConstants"
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
 const getToken = () => localStorage.getItem('token');
 
 type AppPlatform = {
@@ -84,12 +85,12 @@ const CreateMappingModal: React.FC<CreateMappingModalProps> = ({
     setIsLoading(true);
     setInitialPlatformIds(new Set());
     try {
-      const platformsPromise = axios.get(`${API_BASE_URL}/api/admin/brand-mappings/platforms`, {
+      const platformsPromise = axios.get(`${BASE_URL}api/admin/brand-mappings/platforms`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
 
       if (mode === 'create') {
-        const unmappedBrandsPromise = axios.get(`${API_BASE_URL}/api/admin/brand-mappings/unmapped`, {
+        const unmappedBrandsPromise = axios.get(`${BASE_URL}api/admin/brand-mappings/unmapped`, {
           headers: { Authorization: `Bearer ${getToken()}` },
           params: { appId }
         });
@@ -98,7 +99,7 @@ const CreateMappingModal: React.FC<CreateMappingModalProps> = ({
         setUnmappedBrands(unmappedBrandsRes.data.data);
       } else if (mode === 'edit' && editBrand) {
         setSelectedBrandId(editBrand.brand_id);
-        const detailsPromise = axios.get(`${API_BASE_URL}/api/admin/brand-mappings/${appId}/${editBrand.brand_id}`, {
+        const detailsPromise = axios.get(`${BASE_URL}api/admin/brand-mappings/${appId}/${editBrand.brand_id}`, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
         const [platformsRes, detailsRes] = await Promise.all([platformsPromise, detailsPromise]);
@@ -237,13 +238,13 @@ const CreateMappingModal: React.FC<CreateMappingModalProps> = ({
     setIsLoading(true);
     try {
       if (mode === 'create') {
-        await axios.post(`${API_BASE_URL}/api/admin/brand-mappings`, payload, {
+        await axios.post(`${BASE_URL}api/admin/brand-mappings`, payload, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
         toast.success(`Brand mapping created successfully`);
 
       } else {
-        await axios.put(`${API_BASE_URL}/api/admin/brand-mappings/${appId}/${selectedBrandId}`, payload, {
+        await axios.put(`${BASE_URL}api/admin/brand-mappings/${appId}/${selectedBrandId}`, payload, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
         toast.success(`Brand mapping updated successfully`);

@@ -6,8 +6,9 @@ import {
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { BASE_URL } from '../../constants/appConstants';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
 const getToken = () => localStorage.getItem('token');
 
 type PbiDashboard = {
@@ -63,7 +64,7 @@ const AddDashboardModal: React.FC<AddDashboardModalProps> = ({
   useEffect(() => {
     if (open) {
       setIsLoading(true);
-      axios.get(`${API_BASE_URL}/api/admin/brand-mappings/power-bi-dashboards`, {
+      axios.get(`${BASE_URL}api/admin/brand-mappings/power-bi-dashboards`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       })
       .then(res => {

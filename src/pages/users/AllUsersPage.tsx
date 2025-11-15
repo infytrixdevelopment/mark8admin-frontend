@@ -9,9 +9,8 @@ import Switch from '../../components/appComponents/inputs/Switch';
 import PaginationComponent from '../../components/appComponents/PaginationComponent';
 import AddUserModal, { type AddUserPayload } from './AddUserModal';
 import Input from '../../components/appComponents/inputs/Input';
-
+import { BASE_URL } from '../../constants/appConstants';
 // API Base URL - adjust according to your setup
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
 // User type from API
 type User = {
@@ -66,7 +65,7 @@ const AllUsersPage: React.FC = () => {
         search: searchQuery
       };
 
-      const response = await axios.get(`${API_BASE_URL}/api/admin/users`, {
+      const response = await axios.get(`${BASE_URL}api/admin/users`, {
         headers: {
           Authorization: `Bearer ${token}`
         },
@@ -139,7 +138,7 @@ const AllUsersPage: React.FC = () => {
     try {
       const token = getToken();
       const response = await axios.put(
-        `${API_BASE_URL}/api/admin/users/${user_id}/status`,
+        `${BASE_URL}api/admin/users/${user_id}/status`,
         { status: newStatus ? 'ACTIVE' : 'INACTIVE' },
         {
           headers: {
@@ -176,7 +175,7 @@ const AllUsersPage: React.FC = () => {
     try {
       const token = getToken();
       const response = await axios.post(
-        `${API_BASE_URL}/api/admin/users`,
+        `${BASE_URL}api/admin/users`,
         userData,
         {
           headers: {

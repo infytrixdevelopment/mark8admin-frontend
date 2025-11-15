@@ -11,7 +11,7 @@ import Visibility from "../../ui/icons/Small/Visibility.svg";
 import VisibilityOff from "../../ui/icons/Small/VisibilityOff.svg";
 
 // Your Central Auth Backend URL
-const AUTH_API_URL = 'https://mark8auth-backend-55b233081f2d.herokuapp.com';
+const AUTH_API_URL = 'https://mark8auth-backend-55b233081f2d.herokuapp.com/';
 
 const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
 
         try {
             // Call your Central Auth Login Endpoint
-            const response = await axios.post(`${AUTH_API_URL}/api/v1/auth/login`, {
+            const response = await axios.post(`${AUTH_API_URL}api/v1/auth/login`, {
                 email,
                 password,
             });

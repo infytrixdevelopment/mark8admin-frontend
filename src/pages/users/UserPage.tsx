@@ -9,6 +9,8 @@ import BrandModal from './BrandModal';
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import { useAdminLayout } from './AdminLayout';
 import AccessTree from '../../components/AccessTree'; // Import the new component
+import { BASE_URL } from '../../constants/appConstants';
+
 
 // --- TYPE DEFINITIONS ---
 type App = {
@@ -56,7 +58,6 @@ type AccessTreePlatform = {
   platform_name: string;
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
 // --- COMPONENT ---
 const UserPage: React.FC = () => {
@@ -94,7 +95,7 @@ const UserPage: React.FC = () => {
     setIsLoadingTree(true);
     try {
       const token = getToken();
-      const response = await axios.get(`${API_BASE_URL}/api/admin/users/${userId}/access-tree`, {
+      const response = await axios.get(`${BASE_URL}api/admin/users/${userId}/access-tree`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -113,7 +114,7 @@ const UserPage: React.FC = () => {
     if (!userId) return;
     try {
       const token = getToken();
-      const response = await axios.get(`${API_BASE_URL}/api/admin/users/${userId}`, {
+      const response = await axios.get(`${BASE_URL}api/admin/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -129,7 +130,7 @@ const UserPage: React.FC = () => {
     setIsLoadingApps(true);
     try {
       const token = getToken();
-      const response = await axios.get(`${API_BASE_URL}/api/admin/apps`, {
+      const response = await axios.get(`${BASE_URL}api/admin/apps`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -157,13 +158,13 @@ const UserPage: React.FC = () => {
     try {
       const token = getToken();
       const accessResponse = await axios.get(
-        `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/access`,
+        `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}/access`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (accessResponse.data.success && accessResponse.data.data.hasAccess) {
         setHasAccess(true);
         const brandsResponse = await axios.get(
-          `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/brands`,
+          `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}/brands`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (brandsResponse.data.success) {
@@ -192,7 +193,7 @@ const UserPage: React.FC = () => {
     try {
       const token = getToken();
       const response = await axios.get(
-        `${API_BASE_URL}/api/admin/brands/${brandId}/platforms`,
+        `${BASE_URL}api/admin/brands/${brandId}/platforms`,
         { 
           headers: { Authorization: `Bearer ${token}` },
           params: { appId: activeAppId }
@@ -210,13 +211,13 @@ const UserPage: React.FC = () => {
       const token = getToken();
       let endpoint, method;
       if (!hasAccess && modalMode === 'add') {
-        endpoint = `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/grant-access`;
+        endpoint = `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}/grant-access`;
         method = 'post';
       } else if (modalMode === 'add') {
-        endpoint = `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/brands`;
+        endpoint = `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}/brands`;
         method = 'post';
       } else {
-        endpoint = `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/brands/${brandId}/platforms`;
+        endpoint = `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}/brands/${brandId}/platforms`;
         method = 'put';
       }
       const payload = modalMode === 'add' ? { brandId, platformIds } : { platformIds };
@@ -247,7 +248,7 @@ const UserPage: React.FC = () => {
     try {
       const token = getToken();
       const response = await axios.get(
-        `${API_BASE_URL}/api/admin/brands/available`,
+        `${BASE_URL}api/admin/brands/available`,
         {
           headers: { Authorization: `Bearer ${token}` },
           params: { userId, appId: activeAppId }
@@ -294,7 +295,7 @@ const UserPage: React.FC = () => {
     try {
       const token = getToken();
       const response = await axios.delete(
-        `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}`,
+        `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -330,7 +331,7 @@ const UserPage: React.FC = () => {
     const token = getToken();
     const deletePromises = brandIds.map(brandId => {
       return axios.delete(
-        `${API_BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/brands/${brandId}`,
+        `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}/brands/${brandId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
     });

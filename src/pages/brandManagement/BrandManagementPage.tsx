@@ -8,8 +8,8 @@ import Input from '../../components/appComponents/inputs/Input';
 import CreateMappingModal from './CreateMappingModal';
 import { useAdminLayout } from '../users/AdminLayout';
 import PaginationComponent from '../../components/appComponents/PaginationComponent';
+import {BASE_URL} from "../../constants/appConstants"
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 const getToken = () => localStorage.getItem('token');
 
 type App = {
@@ -58,7 +58,7 @@ const BrandManagementPage: React.FC = () => {
     const fetchApps = useCallback(async () => {
         setIsLoadingApps(true);
         try {
-            const response = await axios.get(`${API_BASE_URL}/api/admin/apps`, {
+            const response = await axios.get(`${BASE_URL}api/admin/apps`, {
                 headers: { Authorization: `Bearer ${getToken()}` }
             });
             if (response.data.success && response.data.data.apps.length > 0) {
@@ -77,7 +77,7 @@ const BrandManagementPage: React.FC = () => {
         if (!activeAppId) return;
         setIsLoadingBrands(true);
         try {
-            const response = await axios.get(`${API_BASE_URL}/api/admin/brand-mappings`, {
+            const response = await axios.get(`${BASE_URL}api/admin/brand-mappings`, {
                 headers: { Authorization: `Bearer ${getToken()}` },
                 params: { appId: activeAppId }
             });
@@ -155,7 +155,7 @@ const BrandManagementPage: React.FC = () => {
             return;
         }
         try {
-            await axios.delete(`${API_BASE_URL}/api/admin/brand-mappings/${activeAppId}/${brand.brand_id}`, {
+            await axios.delete(`${BASE_URL}api/admin/brand-mappings/${activeAppId}/${brand.brand_id}`, {
                 headers: { Authorization: `Bearer ${getToken()}` }
             });
             toast.success('Brand mapping deleted successfully');

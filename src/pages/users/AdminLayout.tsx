@@ -5,8 +5,9 @@ import { Box, CircularProgress } from '@mui/joy';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+import { BASE_URL } from '../../constants/appConstants';
+
 // API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
 // Define the type for the tabs
 type AppTabInfo = {
@@ -37,7 +38,7 @@ const AdminLayout: React.FC = () => {
 
       try {
         // Verify token with backend by making a test API call
-        const response = await axios.get(`${API_BASE_URL}/api/admin/apps`, {
+        const response = await axios.get(`${BASE_URL}api/admin/apps`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
