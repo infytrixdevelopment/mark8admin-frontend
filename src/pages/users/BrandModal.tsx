@@ -50,9 +50,7 @@ const BrandModal: React.FC<BrandModalProps> = ({
   open,
   onClose,
   mode,
-  appName, // <-- 2. ADD THIS LINE
-  appId,
-  userId,
+  appName,
   selectedBrandId,
   selectedBrandName,
   assignedPlatformIds,

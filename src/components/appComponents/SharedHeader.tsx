@@ -3,7 +3,7 @@ import { Box, Avatar, Typography, IconButton, Dropdown, Menu, MenuButton, MenuIt
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { PRIMARY, TEXT_PRIMARY } from '../../constants/textColorsConstants';
+import {TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import UserProfile from "../../ui/icons/Small/UserProfile.svg";
 import AppLogo from './AppLogo'; // Make sure this path is correct
 // import "./Header.css";

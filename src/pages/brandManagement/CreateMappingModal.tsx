@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Modal, ModalDialog, DialogTitle, DialogContent, Stack, FormControl, FormLabel, Select,
-  Option, Button, Checkbox, Typography, CircularProgress, Box, IconButton
+  Option, Button, Checkbox, CircularProgress, Box, IconButton
 } from '@mui/joy';
-import { Add, Delete, Edit } from '@mui/icons-material';
+import { Add, Delete } from '@mui/icons-material';
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import toast from 'react-hot-toast';
 import axios from 'axios';

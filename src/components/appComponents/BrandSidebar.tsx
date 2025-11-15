@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { IconButton, CircularProgress, Checkbox, Button } from '@mui/joy';
-import { Search, Add, Delete, ExpandMore, ChevronRight, Edit } from '@mui/icons-material';
+import { Add, Delete, ExpandMore, ChevronRight, Edit } from '@mui/icons-material';
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 import Input from './inputs/Input';
 
@@ -30,7 +30,6 @@ const BrandSidebar: React.FC<BrandSidebarProps> = ({
   onAddBrand,
   onEditBrand,
   onDeleteMultipleBrands,
-  appName // Changed from dashboardName
 }) => {
   const [searchInput, setSearchInput] = useState<string>('');
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
