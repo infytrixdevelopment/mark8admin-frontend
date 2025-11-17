@@ -275,14 +275,17 @@ const UserPage: React.FC = () => {
     setIsModalOpen(true);
   }, [fetchAvailableBrands]);
 
-  const handleEditBrand = useCallback(async (brandId: string) => {
-    const brand = brands.find(b => b.brand_id === brandId);
-    if (!brand) return;
-    setModalMode('edit');
-    setSelectedBrandForEdit(brand);
-    await fetchBrandPlatforms(brandId);
-    setIsModalOpen(true);
-  }, [brands, fetchBrandPlatforms]);
+const handleEditBrand = useCallback((brandId: string) => {
+     const brand = brands.find(b => b.brand_id === brandId);
+     if (!brand) return;
+     
+     setModalMode('edit');
+     setSelectedBrandForEdit(brand);
+     setIsModalOpen(true); //Open modal IMMEDIATELY
+     
+     // Fetch platforms in background AFTER modal opens
+     fetchBrandPlatforms(brandId);
+   }, [brands, fetchBrandPlatforms]);
 
   const handleDeleteAppAccess = useCallback(async (skipConfirmation = false) => {
     const appName = apps.find(d => d.app_id === activeAppId)?.app_name;

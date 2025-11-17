@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Button from '@mui/joy/Button';
 import Modal from '@mui/joy/Modal';
 import ModalDialog from '@mui/joy/ModalDialog';
@@ -12,6 +12,7 @@ import Option from '@mui/joy/Option';
 import Typography from '@mui/joy/Typography';
 import toast from 'react-hot-toast';
 import Input from '../../components/appComponents/inputs/Input';
+import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 
 export type AddUserPayload = {
   full_name: string;
@@ -27,14 +28,15 @@ type AddUserModalProps = {
   onSubmit: (userData: AddUserPayload) => Promise<void>;
 };
 
-const USER_TYPES = ['ADMIN', 'ANALYST', 'MANAGER', 'CLIENT'];
+// Only MANAGER and USER are allowed
+const USER_TYPES = ['MANAGER', 'USER'];
 
 export default function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
   const [formData, setFormData] = useState<AddUserPayload>({
     full_name: '',
     email: '',
     password: '',
-    user_type: 'ANALYST',
+    user_type: 'USER', // Default to USER
     organisation: ''
   });
 
@@ -47,7 +49,7 @@ export default function AddUserModal({ open, onClose, onSubmit }: AddUserModalPr
       full_name: '',
       email: '',
       password: '',
-      user_type: 'ANALYST',
+      user_type: 'USER',
       organisation: ''
     });
     setErrors({});
@@ -195,7 +197,7 @@ export default function AddUserModal({ open, onClose, onSubmit }: AddUserModalPr
               )}
             </FormControl>
 
-            {/* User Type */}
+            {/* User Type - Only MANAGER and USER */}
             <FormControl required>
               <FormLabel>User Type</FormLabel>
               <Select

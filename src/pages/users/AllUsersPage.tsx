@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Option, Select, Stack, CircularProgress } from '@mui/joy';
-import { Search } from '@mui/icons-material';
+import { Search, Add, } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
@@ -56,7 +56,7 @@ const AllUsersPage: React.FC = () => {
   // Fetch users
   const fetchUsers = useCallback(async () => {
     setIsFetching(true);
-    
+
     try {
       const token = getToken();
       const params = {
@@ -84,7 +84,7 @@ const AllUsersPage: React.FC = () => {
       console.error('Fetch users error:', error);
       setUsers([]);
       setTotalRows(0);
-      
+
       if (error.response?.status === 401) {
         toast.error('Session expired. Please login again.');
       } else {
@@ -123,7 +123,7 @@ const AllUsersPage: React.FC = () => {
   // Handle status change
   const handleStatusChange = async (user_id: string, newStatus: boolean) => {
     const originalUsers = [...users];
-    
+
     // Optimistic update
     setUsers(prev =>
       prev.map(user =>
@@ -157,7 +157,7 @@ const AllUsersPage: React.FC = () => {
     } catch (error: any) {
       console.error('Update status error:', error);
       setUsers(originalUsers);
-      
+
       if (error.response?.status === 401) {
         toast.error('Session expired. Please login again.');
       } else {
@@ -194,7 +194,7 @@ const AllUsersPage: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Add user error:', error);
-      
+
       if (error.response?.status === 409) {
         toast.error('Email already exists');
       } else if (error.response?.status === 401) {
@@ -202,7 +202,7 @@ const AllUsersPage: React.FC = () => {
       } else {
         toast.error(error.response?.data?.message || 'Failed to add user');
       }
-      
+
       throw error;
     } finally {
       setIsUpdating(false);
@@ -270,12 +270,9 @@ const AllUsersPage: React.FC = () => {
 
           {/* Add User Button */}
           <Button
+            startDecorator={<Add />}
+            sx={{ backgroundColor: TEXT_PRIMARY.PURPLE }}
             onClick={() => setIsModalOpen(true)}
-            variant="outlined"
-            sx={{
-              color: TEXT_PRIMARY.PURPLE,
-              borderColor: TEXT_PRIMARY.PURPLE,
-            }}
             disabled={isFetching || isUpdating}
           >
             Add New User
@@ -379,7 +376,7 @@ const AllUsersPage: React.FC = () => {
                   cursor: 'pointer',
                   textDecoration: 'underline'
                 }}
-                onClick={() => navigate(`/users/${user.user_id}`)}
+                  onClick={() => navigate(`/users/${user.user_id}`)}
                 >
                   {user.full_name}
                 </div>
@@ -395,16 +392,16 @@ const AllUsersPage: React.FC = () => {
                   <span style={{
                     padding: '4px 8px',
                     borderRadius: '4px',
-                    backgroundColor: 
+                    backgroundColor:
                       user.user_type === 'ADMIN' ? '#FFE5E5' :
-                      user.user_type === 'MANAGER' ? '#E5F3FF' :
-                      user.user_type === 'ANALYST' ? '#F3E5FF' :
-                      '#E5FFE5',
+                        user.user_type === 'MANAGER' ? '#E5F3FF' :
+                          user.user_type === 'ANALYST' ? '#F3E5FF' :
+                            '#E5FFE5',
                     color:
                       user.user_type === 'ADMIN' ? '#D32F2F' :
-                      user.user_type === 'MANAGER' ? '#1976D2' :
-                      user.user_type === 'ANALYST' ? '#7B1FA2' :
-                      '#388E3C',
+                        user.user_type === 'MANAGER' ? '#1976D2' :
+                          user.user_type === 'ANALYST' ? '#7B1FA2' :
+                            '#388E3C',
                     fontSize: 11,
                     fontWeight: 600
                   }}>
@@ -516,4 +513,3 @@ const AllUsersPage: React.FC = () => {
 export default AllUsersPage;
 
 
-                          
