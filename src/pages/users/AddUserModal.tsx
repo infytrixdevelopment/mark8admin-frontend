@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import Button from '@mui/joy/Button';
 import Modal from '@mui/joy/Modal';
 import ModalDialog from '@mui/joy/ModalDialog';
@@ -12,7 +12,6 @@ import Option from '@mui/joy/Option';
 import Typography from '@mui/joy/Typography';
 import toast from 'react-hot-toast';
 import Input from '../../components/appComponents/inputs/Input';
-import { TEXT_PRIMARY } from '../../constants/textColorsConstants';
 
 export type AddUserPayload = {
   full_name: string;
