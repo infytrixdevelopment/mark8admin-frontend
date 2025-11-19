@@ -180,7 +180,7 @@ export default function AddUserModal({ open, onClose, onSubmit }: AddUserModalPr
               <FormLabel>Password</FormLabel>
               <Input
                 placeholder="Enter password (min 8 characters)"
-                type="password"
+                type="text"
                 value={formData.password}
                 onChange={(e) => {
                   setFormData({ ...formData, password: e.target.value });
