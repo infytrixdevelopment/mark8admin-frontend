@@ -38,7 +38,7 @@ const AdminLayout: React.FC = () => {
 
       try {
         // Verify token with backend by making a test API call
-        const response = await axios.get(`${BASE_URL}api/admin/apps`, {
+        const response = await axios.get(`${BASE_URL}/api/admin/apps`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 

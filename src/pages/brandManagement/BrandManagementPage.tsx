@@ -58,7 +58,7 @@ const BrandManagementPage: React.FC = () => {
     const fetchApps = useCallback(async () => {
         setIsLoadingApps(true);
         try {
-            const response = await axios.get(`${BASE_URL}api/admin/apps`, {
+            const response = await axios.get(`${BASE_URL}/api/admin/apps`, {
                 headers: { Authorization: `Bearer ${getToken()}` }
             });
             if (response.data.success && response.data.data.apps.length > 0) {
@@ -77,7 +77,7 @@ const BrandManagementPage: React.FC = () => {
         if (!activeAppId) return;
         setIsLoadingBrands(true);
         try {
-            const response = await axios.get(`${BASE_URL}api/admin/brand-mappings`, {
+            const response = await axios.get(`${BASE_URL}/api/admin/brand-mappings`, {
                 headers: { Authorization: `Bearer ${getToken()}` },
                 params: { appId: activeAppId }
             });
@@ -155,7 +155,7 @@ const BrandManagementPage: React.FC = () => {
             return;
         }
         try {
-            await axios.delete(`${BASE_URL}api/admin/brand-mappings/${activeAppId}/${brand.brand_id}`, {
+            await axios.delete(`${BASE_URL}/api/admin/brand-mappings/${activeAppId}/${brand.brand_id}`, {
                 headers: { Authorization: `Bearer ${getToken()}` }
             });
             toast.success('Brand mapping deleted successfully');

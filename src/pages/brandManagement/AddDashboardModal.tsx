@@ -64,7 +64,7 @@ const AddDashboardModal: React.FC<AddDashboardModalProps> = ({
   useEffect(() => {
     if (open) {
       setIsLoading(true);
-      axios.get(`${BASE_URL}api/admin/brand-mappings/power-bi-dashboards`, {
+      axios.get(`${BASE_URL}/api/admin/brand-mappings/power-bi-dashboards`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       })
       .then(res => {

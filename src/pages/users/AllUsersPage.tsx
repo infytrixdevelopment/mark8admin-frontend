@@ -65,7 +65,7 @@ const AllUsersPage: React.FC = () => {
         search: searchQuery
       };
 
-      const response = await axios.get(`${BASE_URL}api/admin/users`, {
+      const response = await axios.get(`${BASE_URL}/api/admin/users`, {
         headers: {
           Authorization: `Bearer ${token}`
         },
@@ -138,7 +138,7 @@ const AllUsersPage: React.FC = () => {
     try {
       const token = getToken();
       const response = await axios.put(
-        `${BASE_URL}api/admin/users/${user_id}/status`,
+        `${BASE_URL}/api/admin/users/${user_id}/status`,
         { status: newStatus ? 'ACTIVE' : 'INACTIVE' },
         {
           headers: {
@@ -175,7 +175,7 @@ const AllUsersPage: React.FC = () => {
     try {
       const token = getToken();
       const response = await axios.post(
-        `${BASE_URL}api/admin/users`,
+        `${BASE_URL}/api/admin/users`,
         userData,
         {
           headers: {

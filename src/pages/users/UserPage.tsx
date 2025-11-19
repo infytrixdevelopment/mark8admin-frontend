@@ -95,7 +95,7 @@ const UserPage: React.FC = () => {
     setIsLoadingTree(true);
     try {
       const token = getToken();
-      const response = await axios.get(`${BASE_URL}api/admin/users/${userId}/access-tree`, {
+      const response = await axios.get(`${BASE_URL}/api/admin/users/${userId}/access-tree`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -114,7 +114,7 @@ const UserPage: React.FC = () => {
     if (!userId) return;
     try {
       const token = getToken();
-      const response = await axios.get(`${BASE_URL}api/admin/users/${userId}`, {
+      const response = await axios.get(`${BASE_URL}/api/admin/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -130,7 +130,7 @@ const UserPage: React.FC = () => {
     setIsLoadingApps(true);
     try {
       const token = getToken();
-      const response = await axios.get(`${BASE_URL}api/admin/apps`, {
+      const response = await axios.get(`${BASE_URL}/api/admin/apps`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -158,13 +158,13 @@ const UserPage: React.FC = () => {
     try {
       const token = getToken();
       const accessResponse = await axios.get(
-        `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}/access`,
+        `${BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/access`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (accessResponse.data.success && accessResponse.data.data.hasAccess) {
         setHasAccess(true);
         const brandsResponse = await axios.get(
-          `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}/brands`,
+          `${BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/brands`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (brandsResponse.data.success) {
@@ -193,7 +193,7 @@ const UserPage: React.FC = () => {
     try {
       const token = getToken();
       const response = await axios.get(
-        `${BASE_URL}api/admin/brands/${brandId}/platforms`,
+        `${BASE_URL}/api/admin/brands/${brandId}/platforms`,
         { 
           headers: { Authorization: `Bearer ${token}` },
           params: { appId: activeAppId }
@@ -211,13 +211,13 @@ const UserPage: React.FC = () => {
       const token = getToken();
       let endpoint, method;
       if (!hasAccess && modalMode === 'add') {
-        endpoint = `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}/grant-access`;
+        endpoint = `${BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/grant-access`;
         method = 'post';
       } else if (modalMode === 'add') {
-        endpoint = `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}/brands`;
+        endpoint = `${BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/brands`;
         method = 'post';
       } else {
-        endpoint = `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}/brands/${brandId}/platforms`;
+        endpoint = `${BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/brands/${brandId}/platforms`;
         method = 'put';
       }
       const payload = modalMode === 'add' ? { brandId, platformIds } : { platformIds };
@@ -248,7 +248,7 @@ const UserPage: React.FC = () => {
     try {
       const token = getToken();
       const response = await axios.get(
-        `${BASE_URL}api/admin/brands/available`,
+        `${BASE_URL}/api/admin/brands/available`,
         {
           headers: { Authorization: `Bearer ${token}` },
           params: { userId, appId: activeAppId }
@@ -298,7 +298,7 @@ const handleEditBrand = useCallback((brandId: string) => {
     try {
       const token = getToken();
       const response = await axios.delete(
-        `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}`,
+        `${BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -334,7 +334,7 @@ const handleEditBrand = useCallback((brandId: string) => {
     const token = getToken();
     const deletePromises = brandIds.map(brandId => {
       return axios.delete(
-        `${BASE_URL}api/admin/users/${userId}/apps/${activeAppId}/brands/${brandId}`,
+        `${BASE_URL}/api/admin/users/${userId}/apps/${activeAppId}/brands/${brandId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
     });
